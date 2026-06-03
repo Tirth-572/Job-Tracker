@@ -1,0 +1,274 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CANDIDATE
+  COMPANY
+  ADMIN
+}
+
+enum ApplicationStatus {
+  APPLIED
+  UNDER_REVIEW
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  SELECTED
+  OFFER_SENT
+  JOINED
+  REJECTED
+}
+
+enum JobStatus {
+  ACTIVE
+  CLOSED
+  DRAFT
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  REMOTE
+}
+
+enum InterviewType {
+  PHONE
+  VIDEO
+  IN_PERSON
+  TECHNICAL
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String
+  role          Role     @default(CANDIDATE)
+  isActive      Boolean  @default(true)
+  isBlocked     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  candidate     Candidate?
+  company       Company?
+  notifications Notification[]
+  sentMessages  Message[]      @relation("SentMessages")
+  receivedMessages Message[]   @relation("ReceivedMessages")
+  emailLogs     EmailLog[]
+}
+
+model Candidate {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  phone        String?
+  location     String?
+  bio          String?
+  avatar       String?
+  resumeUrl    String?
+  resumeName   String?
+  linkedinUrl  String?
+  githubUrl    String?
+  portfolioUrl String?
+  skills       String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  experiences  Experience[]
+  educations   Education[]
+  applications Application[]
+  savedJobs    SavedJob[]
+  chatRooms    ChatRoom[]
+}
+
+model Experience {
+  id           String    @id @default(cuid())
+  candidateId  String
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  title        String
+  company      String
+  location     String?
+  startDate    DateTime
+  endDate      DateTime?
+  current      Boolean   @default(false)
+  description  String?
+  createdAt    DateTime  @default(now())
+}
+
+model Education {
+  id          String    @id @default(cuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  school      String
+  degree      String
+  field       String
+  startDate   DateTime
+  endDate     DateTime?
+  current     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model Company {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  industry    String?
+  size        String?
+  website     String?
+  location    String?
+  logo        String?
+  isVerified  Boolean   @default(false)
+  isBlocked   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  jobs        Job[]
+  chatRooms   ChatRoom[]
+}
+
+model Job {
+  id           String        @id @default(cuid())
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  requirements String?
+  benefits     String?
+  location     String
+  type         JobType       @default(FULL_TIME)
+  status       JobStatus     @default(ACTIVE)
+  salaryMin    Int?
+  salaryMax    Int?
+  currency     String        @default("USD")
+  skills       String[]
+  experience   String?
+  deadline     DateTime?
+  views        Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  applications Application[]
+  savedJobs    SavedJob[]
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  jobId       String
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  status      ApplicationStatus @default(APPLIED)
+  coverLetter String?
+  resumeUrl   String?
+  notes       String?
+  rejectionReason String?
+  appliedAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  interviews  Interview[]
+  offerLetter OfferLetter?
+  chatRoom    ChatRoom?
+
+  @@unique([jobId, candidateId])
+}
+
+model Interview {
+  id            String        @id @default(cuid())
+  applicationId String
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type          InterviewType @default(VIDEO)
+  scheduledAt   DateTime
+  duration      Int           @default(60)
+  location      String?
+  meetingLink   String?
+  notes         String?
+  feedback      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model OfferLetter {
+  id            String      @id @default(cuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fileUrl       String
+  salary        Int?
+  joiningDate   DateTime?
+  createdAt     DateTime    @default(now())
+}
+
+model SavedJob {
+  id          String    @id @default(cuid())
+  jobId       String
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([jobId, candidateId])
+}
+
+model ChatRoom {
+  id            String      @id @default(cuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  candidateId   String
+  candidate     Candidate   @relation(fields: [candidateId], references: [id])
+  companyId     String
+  company       Company     @relation(fields: [companyId], references: [id])
+  createdAt     DateTime    @default(now())
+
+  messages      Message[]
+}
+
+model Message {
+  id         String    @id @default(cuid())
+  roomId     String
+  room       ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content    String?
+  fileUrl    String?
+  fileType   String?
+  isRead     Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  to          String
+  subject     String
+  template    String
+  status      String   @default("PENDING")
+  attempts    Int      @default(0)
+  error       String?
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+}
