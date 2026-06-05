@@ -9,6 +9,7 @@ const applicationRoutes = require('./applications');
 const chatRoutes = require('./chat');
 const notificationRoutes = require('./notifications');
 const adminRoutes = require('./admin');
+const supportRoutes = require('./support');
 
 router.use('/auth', authRoutes);
 router.use('/candidates', candidateRoutes);
@@ -18,5 +19,6 @@ router.use('/applications', applicationRoutes);
 router.use('/chat', chatRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/admin', adminRoutes);
+router.use('/support', supportRoutes);
 
 module.exports = router;

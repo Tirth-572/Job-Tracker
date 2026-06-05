@@ -1,6 +1,11 @@
 const prisma = require('../config/prisma');
 const { asyncHandler } = require('../middleware/errorHandler');
 
+const parseDate = (d) => {
+  const date = new Date(d);
+  return isNaN(date.getTime()) ? null : date;
+};
+
 exports.getProfile = asyncHandler(async (req, res) => {
   const candidate = await prisma.candidate.findUnique({
     where: { userId: req.user.id },
@@ -10,10 +15,14 @@ exports.getProfile = asyncHandler(async (req, res) => {
 });
 
 exports.updateProfile = asyncHandler(async (req, res) => {
-  const { firstName, lastName, phone, location, bio, skills, linkedinUrl, githubUrl, portfolioUrl } = req.body;
+  const { firstName, lastName, phone, dob, gender, location, bio, skills, linkedinUrl, githubUrl, portfolioUrl } = req.body;
   const candidate = await prisma.candidate.update({
     where: { userId: req.user.id },
-    data: { firstName, lastName, phone, location, bio, skills, linkedinUrl, githubUrl, portfolioUrl },
+    data: { 
+      firstName, lastName, phone, 
+      dob: dob ? parseDate(dob) : null,
+      gender, location, bio, skills, linkedinUrl, githubUrl, portfolioUrl 
+    },
   });
   res.json(candidate);
 });
@@ -26,6 +35,14 @@ exports.uploadAvatar = asyncHandler(async (req, res) => {
     data: { avatar: avatarUrl },
   });
   res.json({ avatar: candidate.avatar });
+});
+
+exports.removeAvatar = asyncHandler(async (req, res) => {
+  const candidate = await prisma.candidate.update({
+    where: { userId: req.user.id },
+    data: { avatar: null },
+  });
+  res.json({ message: 'Avatar removed successfully' });
 });
 
 exports.uploadResume = asyncHandler(async (req, res) => {
@@ -46,13 +63,16 @@ exports.addExperience = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Title, company and start date are required' });
   }
 
+  const sDate = parseDate(startDate);
+  if (!sDate) return res.status(400).json({ message: 'Invalid start date' });
+
   const exp = await prisma.experience.create({
     data: {
       title,
       company,
       location: location || null,
-      startDate: new Date(startDate),
-      endDate: endDate ? new Date(endDate) : null,
+      startDate: sDate,
+      endDate: endDate ? parseDate(endDate) : null,
       current: current === true || current === 'true',
       description: description || null,
       candidateId: candidate.id,
@@ -75,8 +95,8 @@ exports.updateExperience = asyncHandler(async (req, res) => {
       title,
       company,
       location: location || null,
-      startDate: startDate ? new Date(startDate) : existing.startDate,
-      endDate: endDate ? new Date(endDate) : null,
+      startDate: startDate ? (parseDate(startDate) || existing.startDate) : existing.startDate,
+      endDate: endDate ? parseDate(endDate) : null,
       current: current === true || current === 'true',
       description: description || null,
     },
@@ -103,13 +123,16 @@ exports.addEducation = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'School, degree, field and start date are required' });
   }
 
+  const sDate = parseDate(startDate);
+  if (!sDate) return res.status(400).json({ message: 'Invalid start date' });
+
   const edu = await prisma.education.create({
     data: {
       school,
       degree,
       field,
-      startDate: new Date(startDate),
-      endDate: endDate ? new Date(endDate) : null,
+      startDate: sDate,
+      endDate: endDate ? parseDate(endDate) : null,
       current: current === true || current === 'true',
       candidateId: candidate.id,
     },
@@ -131,8 +154,8 @@ exports.updateEducation = asyncHandler(async (req, res) => {
       school,
       degree,
       field,
-      startDate: startDate ? new Date(startDate) : existing.startDate,
-      endDate: endDate ? new Date(endDate) : null,
+      startDate: startDate ? (parseDate(startDate) || existing.startDate) : existing.startDate,
+      endDate: endDate ? parseDate(endDate) : null,
       current: current === true || current === 'true',
     },
   });

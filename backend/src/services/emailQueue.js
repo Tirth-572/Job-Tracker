@@ -70,7 +70,20 @@ const addEmailJob = async (jobData) => {
       );
     } catch (err) {
       console.warn('Failed to queue email (sending directly):', err.message);
-      // Fallback: try sending directly without queue
+      // Fallback: try sending directly without queue (fire and forget)
+      Promise.resolve().then(async () => {
+        try {
+          const { sendEmail } = require('./emailService');
+          await sendEmail({ to: jobData.to, subject: jobData.subject, template: jobData.template, data: jobData.data });
+          await prisma.emailLog.update({ where: { id: log.id }, data: { status: 'SENT', sentAt: new Date() } });
+        } catch (e) {
+          await prisma.emailLog.update({ where: { id: log.id }, data: { status: 'FAILED', error: e.message } }).catch(() => {});
+        }
+      });
+    }
+  } else {
+    // No queue — send directly (fire and forget)
+    Promise.resolve().then(async () => {
       try {
         const { sendEmail } = require('./emailService');
         await sendEmail({ to: jobData.to, subject: jobData.subject, template: jobData.template, data: jobData.data });
@@ -78,16 +91,7 @@ const addEmailJob = async (jobData) => {
       } catch (e) {
         await prisma.emailLog.update({ where: { id: log.id }, data: { status: 'FAILED', error: e.message } }).catch(() => {});
       }
-    }
-  } else {
-    // No queue — send directly
-    try {
-      const { sendEmail } = require('./emailService');
-      await sendEmail({ to: jobData.to, subject: jobData.subject, template: jobData.template, data: jobData.data });
-      await prisma.emailLog.update({ where: { id: log.id }, data: { status: 'SENT', sentAt: new Date() } });
-    } catch (e) {
-      await prisma.emailLog.update({ where: { id: log.id }, data: { status: 'FAILED', error: e.message } }).catch(() => {});
-    }
+    });
   }
 };
 

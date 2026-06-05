@@ -12,14 +12,14 @@ const baseTemplate = (content) => `
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
         <tr>
           <td style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:32px;text-align:center;">
-            <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:700;">🎯 TalentFlow ATS</h1>
+            <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:700;">🎯 HireBridge ATS</h1>
           </td>
         </tr>
         <tr><td style="padding:40px 32px;">${content}</td></tr>
         <tr>
           <td style="background:#f8fafc;padding:24px;text-align:center;border-top:1px solid #e2e8f0;">
-            <p style="margin:0;color:#94a3b8;font-size:13px;">© 2024 TalentFlow ATS. All rights reserved.</p>
-            <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;">You're receiving this because you have an account on TalentFlow.</p>
+            <p style="margin:0;color:#94a3b8;font-size:13px;">© 2024 HireBridge ATS. All rights reserved.</p>
+            <p style="margin:8px 0 0;color:#94a3b8;font-size:12px;">You're receiving this because you have an account on HireBridge.</p>
           </td>
         </tr>
       </table>

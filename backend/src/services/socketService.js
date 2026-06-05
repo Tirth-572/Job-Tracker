@@ -28,12 +28,24 @@ const initSocket = (io) => {
       socket.join(roomId);
     });
 
+    socket.on('joinSupport', (ticketId) => {
+      socket.join(`support_${ticketId}`);
+    });
+
     socket.on('leaveRoom', (roomId) => {
       socket.leave(roomId);
     });
 
+    socket.on('leaveSupport', (ticketId) => {
+      socket.leave(`support_${ticketId}`);
+    });
+
     socket.on('typing', ({ roomId, isTyping }) => {
       socket.to(roomId).emit('typing', { userId: socket.userId, isTyping });
+    });
+
+    socket.on('checkOnline', (targetUserId) => {
+      socket.emit('userOnlineStatus', { userId: targetUserId, isOnline: onlineUsers.has(targetUserId) });
     });
 
     socket.on('disconnect', () => {

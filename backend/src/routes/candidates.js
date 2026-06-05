@@ -9,6 +9,7 @@ router.use(authenticate, authorize('CANDIDATE'));
 router.get('/profile', ctrl.getProfile);
 router.put('/profile', ctrl.updateProfile);
 router.post('/avatar', uploadAvatar.single('avatar'), ctrl.uploadAvatar);
+router.delete('/avatar', ctrl.removeAvatar);
 router.post('/resume', uploadResume.single('resume'), ctrl.uploadResume);
 
 router.post('/experiences', ctrl.addExperience);

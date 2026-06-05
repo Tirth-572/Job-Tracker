@@ -8,9 +8,10 @@ exports.getRooms = asyncHandler(async (req, res) => {
     rooms = await prisma.chatRoom.findMany({
       where: { candidateId: candidate.id },
       include: {
-        company: { select: { name: true, logo: true } },
-        application: { include: { job: { select: { title: true } } } },
+        company: { select: { name: true, logo: true, userId: true } },
+        application: { include: { job: { select: { title: true } }, stage: { select: { name: true } } } },
         messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+        _count: { select: { messages: { where: { isRead: false, receiverId: req.user.id } } } },
       },
     });
   } else {
@@ -18,9 +19,10 @@ exports.getRooms = asyncHandler(async (req, res) => {
     rooms = await prisma.chatRoom.findMany({
       where: { companyId: company.id },
       include: {
-        candidate: { select: { firstName: true, lastName: true, avatar: true } },
-        application: { include: { job: { select: { title: true } } } },
+        candidate: { select: { firstName: true, lastName: true, avatar: true, resumeUrl: true, userId: true } },
+        application: { include: { job: { select: { title: true } }, stage: { select: { name: true } } } },
         messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+        _count: { select: { messages: { where: { isRead: false, receiverId: req.user.id } } } },
       },
     });
   }
@@ -40,10 +42,21 @@ exports.getMessages = asyncHandler(async (req, res) => {
   });
 
   // Mark messages as read
-  await prisma.message.updateMany({
+  const unreadCount = await prisma.message.count({
     where: { roomId: req.params.roomId, receiverId: req.user.id, isRead: false },
-    data: { isRead: true },
   });
+
+  if (unreadCount > 0) {
+    await prisma.message.updateMany({
+      where: { roomId: req.params.roomId, receiverId: req.user.id, isRead: false },
+      data: { isRead: true },
+    });
+    // Emit read receipt
+    const io = req.app.get('io');
+    if (io) {
+      io.to(req.params.roomId).emit('messagesRead', { userId: req.user.id, roomId: req.params.roomId });
+    }
+  }
 
   res.json(messages);
 });

@@ -139,3 +139,26 @@ exports.getEmailLogs = asyncHandler(async (req, res) => {
 
   res.json({ logs, total, pages: Math.ceil(total / limit) });
 });
+
+exports.getProfile = asyncHandler(async (req, res) => {
+  let admin = await prisma.admin.findUnique({ where: { userId: req.user.id } });
+  if (!admin) {
+    admin = await prisma.admin.create({
+      data: {
+        userId: req.user.id,
+        firstName: req.user.email.split('@')[0],
+        lastName: 'Admin'
+      }
+    });
+  }
+  res.json(admin);
+});
+
+exports.updateProfile = asyncHandler(async (req, res) => {
+  const { firstName, lastName, designation } = req.body;
+  const admin = await prisma.admin.update({
+    where: { userId: req.user.id },
+    data: { firstName, lastName, designation },
+  });
+  res.json(admin);
+});

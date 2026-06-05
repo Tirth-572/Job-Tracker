@@ -14,5 +14,7 @@ router.patch('/companies/:id/block', ctrl.blockCompany);
 router.get('/jobs', ctrl.getAllJobs);
 router.delete('/jobs/:id', ctrl.deleteJob);
 router.get('/email-logs', ctrl.getEmailLogs);
+router.get('/profile', ctrl.getProfile);
+router.put('/profile', ctrl.updateProfile);
 
 module.exports = router;

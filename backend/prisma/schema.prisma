@@ -28,6 +28,7 @@ enum ApplicationStatus {
 enum JobStatus {
   ACTIVE
   CLOSED
+  EXPIRED
   DRAFT
 }
 
@@ -44,12 +45,23 @@ enum InterviewType {
   VIDEO
   IN_PERSON
   TECHNICAL
+  HR
+  PRACTICAL
+  ASSIGNMENT
+  MANAGERIAL
+  FINAL
+  CUSTOM
+  QA_ROUND
+  BEHAVIORAL
 }
 
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
-  password      String
+  phone         String?  @unique
+  password      String?
+  googleId      String?  @unique
+  avatar        String?
   role          Role     @default(CANDIDATE)
   isActive      Boolean  @default(true)
   isBlocked     Boolean  @default(false)
@@ -58,10 +70,18 @@ model User {
 
   candidate     Candidate?
   company       Company?
+  admin         Admin?
   notifications Notification[]
+  activityLogs  ActivityLog[]
   sentMessages  Message[]      @relation("SentMessages")
   receivedMessages Message[]   @relation("ReceivedMessages")
   emailLogs     EmailLog[]
+  supportTickets SupportTicket[]
+  supportMessages SupportMessage[]
+
+  emailNotifications Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  profileVisibility  String  @default("PUBLIC")
 }
 
 model Candidate {
@@ -71,6 +91,8 @@ model Candidate {
   firstName    String
   lastName     String
   phone        String?
+  dob          DateTime?
+  gender       String?
   location     String?
   bio          String?
   avatar       String?
@@ -126,7 +148,15 @@ model Company {
   industry    String?
   size        String?
   website     String?
+  linkedin    String?
   location    String?
+  city        String?
+  state       String?
+  country     String?
+  address     String?
+  hrName      String?
+  hrDesignation String?
+  foundedYear Int?
   logo        String?
   isVerified  Boolean   @default(false)
   isBlocked   Boolean   @default(false)
@@ -135,6 +165,27 @@ model Company {
 
   jobs        Job[]
   chatRooms   ChatRoom[]
+  workflowStages WorkflowStage[]
+}
+
+model WorkflowStage {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String
+  color       String   @default("bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300")
+  order       Int      @default(0)
+  isSystem    Boolean  @default(false)
+  systemType  String?  // 'APPLIED', 'REJECTED', 'JOINED', 'OFFER', etc.
+  isInterview Boolean  @default(false)
+  interviewType InterviewType? // Type of interview for this stage
+  instructions String? // Default instructions for interviewers
+
+  applications Application[]
+  interviews   Interview[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Job {
@@ -154,6 +205,7 @@ model Job {
   skills       String[]
   experience   String?
   deadline     DateTime?
+  closedAt     DateTime?
   views        Int           @default(0)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -173,6 +225,10 @@ model Application {
   resumeUrl   String?
   notes       String?
   rejectionReason String?
+  
+  stageId     String?
+  stage       WorkflowStage?    @relation(fields: [stageId], references: [id])
+
   appliedAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
@@ -192,6 +248,11 @@ model Interview {
   duration      Int           @default(60)
   location      String?
   meetingLink   String?
+  customTypeName String?
+  
+  stageId       String?
+  stage         WorkflowStage? @relation(fields: [stageId], references: [id])
+
   notes         String?
   feedback      String?
   createdAt     DateTime      @default(now())
@@ -271,4 +332,55 @@ model EmailLog {
   error       String?
   sentAt      DateTime?
   createdAt   DateTime @default(now())
+}
+
+enum TicketStatus {
+  OPEN
+  PENDING
+  RESOLVED
+  CLOSED
+}
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  status    TicketStatus @default(OPEN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  SupportMessage[]
+}
+
+model SupportMessage {
+  id         String   @id @default(cuid())
+  ticketId   String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     User     @relation(fields: [senderId], references: [id])
+  message    String?
+  attachment String?
+  createdAt  DateTime @default(now())
+}
+
+model Admin {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName   String
+  lastName    String
+  designation String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
 }

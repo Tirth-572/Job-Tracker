@@ -44,19 +44,7 @@ exports.apply = asyncHandler(async (req, res) => {
     req.app.get('io')
   );
 
-  // Send confirmation email to candidate
-  await addEmailJob({
-    to: req.user.email,
-    userId: req.user.id,
-    subject: `Application Submitted - ${job.title}`,
-    template: 'applicationConfirmation',
-    data: {
-      candidateName: `${candidate.firstName} ${candidate.lastName}`,
-      companyName: job.company.name,
-      jobTitle: job.title,
-      dashboardLink: `${process.env.CLIENT_URL}/candidate/applications`,
-    },
-  });
+  // Email sending removed per user request
 
   res.status(201).json(application);
 });
@@ -64,7 +52,9 @@ exports.apply = asyncHandler(async (req, res) => {
 exports.getCandidateApplications = asyncHandler(async (req, res) => {
   const candidate = await prisma.candidate.findUnique({ where: { userId: req.user.id } });
   const { status, page = 1, limit = 10 } = req.query;
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const safePage = parseInt(page) || 1;
+  const safeLimit = parseInt(limit) || 10;
+  const skip = (safePage - 1) * safeLimit;
 
   const where = { candidateId: candidate.id, ...(status && { status }) };
 
@@ -72,18 +62,19 @@ exports.getCandidateApplications = asyncHandler(async (req, res) => {
     prisma.application.findMany({
       where,
       include: {
-        job: { include: { company: { select: { name: true, logo: true } } } },
+        job: { include: { company: { select: { name: true, logo: true, workflowStages: { orderBy: { order: 'asc' } } } } } },
+        stage: true,
         interviews: { orderBy: { scheduledAt: 'asc' } },
         offerLetter: true,
       },
       orderBy: { appliedAt: 'desc' },
       skip,
-      take: parseInt(limit),
+      take: safeLimit,
     }),
     prisma.application.count({ where }),
   ]);
 
-  res.json({ applications, total, pages: Math.ceil(total / limit) });
+  res.json({ applications, total, pages: Math.ceil(total / safeLimit) });
 });
 
 exports.getApplication = asyncHandler(async (req, res) => {
@@ -102,12 +93,15 @@ exports.getApplication = asyncHandler(async (req, res) => {
 
 exports.getCompanyApplications = asyncHandler(async (req, res) => {
   const company = await prisma.company.findUnique({ where: { userId: req.user.id } });
-  const { status, jobId, page = 1, limit = 20 } = req.query;
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const { status, stageId, jobId, page = 1, limit = 20 } = req.query;
+  const safePage = parseInt(page) || 1;
+  const safeLimit = parseInt(limit) || 20;
+  const skip = (safePage - 1) * safeLimit;
 
   const where = {
     job: { companyId: company.id },
     ...(status && { status }),
+    ...(stageId && { stageId }),
     ...(jobId && { jobId }),
   };
 
@@ -117,20 +111,21 @@ exports.getCompanyApplications = asyncHandler(async (req, res) => {
       include: {
         job: { select: { title: true } },
         candidate: true,
+        stage: true,
         interviews: { orderBy: { scheduledAt: 'asc' }, take: 1 },
       },
       orderBy: { appliedAt: 'desc' },
       skip,
-      take: parseInt(limit),
+      take: safeLimit,
     }),
     prisma.application.count({ where }),
   ]);
 
-  res.json({ applications, total, pages: Math.ceil(total / limit) });
+  res.json({ applications, total, pages: Math.ceil(total / safeLimit) });
 });
 
 exports.updateStatus = asyncHandler(async (req, res) => {
-  const { status, notes, rejectionReason } = req.body;
+  const { status, stageId, notes, rejectionReason } = req.body;
   const company = await prisma.company.findUnique({ where: { userId: req.user.id } });
 
   const application = await prisma.application.findFirst({
@@ -138,40 +133,44 @@ exports.updateStatus = asyncHandler(async (req, res) => {
     include: {
       job: { include: { company: true } },
       candidate: { include: { user: true } },
+      stage: true
     },
   });
   if (!application) return res.status(404).json({ message: 'Application not found' });
 
+  const statusChanged = (status && status !== application.status) || (stageId && stageId !== application.stageId);
+
+  let newStage = application.stage;
+  if (stageId) {
+    newStage = await prisma.workflowStage.findUnique({ where: { id: stageId } });
+  }
+
+  const isRejected = status === 'REJECTED' || newStage?.systemType === 'REJECTED';
+
   const updated = await prisma.application.update({
     where: { id: req.params.id },
-    data: { status, notes, ...(rejectionReason && { rejectionReason }) },
-  });
-
-  // Send status update email
-  await addEmailJob({
-    to: application.candidate.user.email,
-    userId: application.candidate.userId,
-    subject: `Application Update - ${application.job.title} at ${application.job.company.name}`,
-    template: 'statusUpdate',
-    data: {
-      candidateName: `${application.candidate.firstName} ${application.candidate.lastName}`,
-      companyName: application.job.company.name,
-      jobTitle: application.job.title,
-      status,
-      rejectionReason,
-      dashboardLink: `${process.env.CLIENT_URL}/candidate/applications`,
+    data: { 
+      ...(status && { status }),
+      ...(stageId && { stageId }),
+      ...(notes !== undefined && { notes }),
+      rejectionReason: isRejected ? rejectionReason : null
     },
+    include: { stage: true }
   });
 
-  // Create notification for candidate
-  await createNotification(
-    application.candidate.userId,
-    'Application Status Updated',
-    `Your application for ${application.job.title} is now ${status.replace(/_/g, ' ')}`,
-    'STATUS_UPDATE',
-    `/candidate/applications/${application.id}`,
-    req.app.get('io')
-  );
+  if (statusChanged) {
+    // Email sending removed per user request
+
+    // Create notification for candidate
+    await createNotification(
+      application.candidate.userId,
+      'Application Status Updated',
+      `Your application for ${application.job.title} is now ${status.replace(/_/g, ' ')}`,
+      'STATUS_UPDATE',
+      `/candidate/applications/${application.id}`,
+      req.app.get('io')
+    );
+  }
 
   res.json(updated);
 });
@@ -191,27 +190,14 @@ exports.scheduleInterview = asyncHandler(async (req, res) => {
     data: { ...req.body, applicationId: application.id },
   });
 
-  await prisma.application.update({
-    where: { id: application.id },
-    data: { status: 'INTERVIEW_SCHEDULED' },
-  });
+  if (req.body.stageId) {
+    await prisma.application.update({
+      where: { id: application.id },
+      data: { stageId: req.body.stageId },
+    });
+  }
 
-  await addEmailJob({
-    to: application.candidate.user.email,
-    userId: application.candidate.userId,
-    subject: `Interview Scheduled - ${application.job.title}`,
-    template: 'interviewScheduled',
-    data: {
-      candidateName: `${application.candidate.firstName} ${application.candidate.lastName}`,
-      companyName: application.job.company.name,
-      jobTitle: application.job.title,
-      scheduledAt: interview.scheduledAt,
-      type: interview.type,
-      meetingLink: interview.meetingLink,
-      location: interview.location,
-      dashboardLink: `${process.env.CLIENT_URL}/candidate/applications`,
-    },
-  });
+  // Email sending removed per user request
 
   await createNotification(
     application.candidate.userId,
@@ -259,18 +245,7 @@ exports.uploadOfferLetter = asyncHandler(async (req, res) => {
     data: { status: 'OFFER_SENT' },
   });
 
-  await addEmailJob({
-    to: application.candidate.user.email,
-    userId: application.candidate.userId,
-    subject: `Offer Letter - ${application.job.title} at ${application.job.company.name}`,
-    template: 'offerSent',
-    data: {
-      candidateName: `${application.candidate.firstName} ${application.candidate.lastName}`,
-      companyName: application.job.company.name,
-      jobTitle: application.job.title,
-      dashboardLink: `${process.env.CLIENT_URL}/candidate/applications`,
-    },
-  });
+  // Email sending removed per user request
 
   res.status(201).json(offerLetter);
 });

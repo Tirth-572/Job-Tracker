@@ -7,10 +7,10 @@ async function main() {
   const adminPassword = await bcrypt.hash('admin123456', 12);
   
   await prisma.user.upsert({
-    where: { email: 'admin@talentflow.com' },
+    where: { email: 'admin@hirebridge.com' },
     update: {},
     create: {
-      email: 'admin@talentflow.com',
+      email: 'admin@hirebridge.com',
       password: adminPassword,
       role: 'ADMIN',
     },
@@ -19,7 +19,13 @@ async function main() {
   const companyPassword = await bcrypt.hash('company123456', 12);
   await prisma.user.upsert({
     where: { email: 'hr@techcorp.com' },
-    update: {},
+    update: {
+      company: {
+        update: {
+          logo: 'https://ui-avatars.com/api/?name=TechCorp+Inc.&background=0D8ABC&color=fff&size=256'
+        }
+      }
+    },
     create: {
       email: 'hr@techcorp.com',
       password: companyPassword,
@@ -33,6 +39,7 @@ async function main() {
           website: 'https://techcorp.com',
           location: 'San Francisco, CA',
           isVerified: true,
+          logo: 'https://ui-avatars.com/api/?name=TechCorp+Inc.&background=0D8ABC&color=fff&size=256',
         },
       },
     },
@@ -41,7 +48,13 @@ async function main() {
   const candidatePassword = await bcrypt.hash('candidate123456', 12);
   await prisma.user.upsert({
     where: { email: 'john@example.com' },
-    update: {},
+    update: {
+      candidate: {
+        update: {
+          avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=random&color=fff&size=256'
+        }
+      }
+    },
     create: {
       email: 'john@example.com',
       password: candidatePassword,
@@ -54,15 +67,21 @@ async function main() {
           location: 'New York, NY',
           bio: 'Full-stack developer with 5 years of experience.',
           skills: ['JavaScript', 'React', 'Node.js', 'PostgreSQL'],
+          avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=random&color=fff&size=256',
         },
       },
     },
   });
 
   console.log('✅ Seed data created successfully');
-  console.log('Admin: admin@talentflow.com / admin123456');
+  console.log('Admin: admin@hirebridge.com / admin123456');
   console.log('Company: hr@techcorp.com / company123456');
   console.log('Candidate: john@example.com / candidate123456');
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(() => prisma.$disconnect());

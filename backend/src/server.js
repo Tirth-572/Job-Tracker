@@ -11,6 +11,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const routes = require('./routes');
+const workflowRoutes = require('./routes/workflows');
 const { errorHandler } = require('./middleware/errorHandler');
 const { initSocket } = require('./services/socketService');
 const { initEmailQueue } = require('./services/emailQueue');
@@ -24,7 +25,7 @@ const io = new Server(server, {
 
 app.set('io', io);
 
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false, crossOriginResourcePolicy: false }));
 app.use(compression());
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
@@ -48,6 +49,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Dat
 app.options('*', cors());
 
 app.use('/api', routes);
+app.use('/api/workflows', workflowRoutes);
 app.use(errorHandler);
 
 initSocket(io);

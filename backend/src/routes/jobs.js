@@ -11,6 +11,8 @@ router.use(authenticate, authorize('COMPANY'));
 router.get('/company/mine', ctrl.getCompanyJobs);
 router.post('/', jobRules, validate, ctrl.createJob);
 router.put('/:id', ctrl.updateJob);
+router.put('/:id/close', ctrl.closeJob);
+router.post('/:id/repost', ctrl.repostJob);
 router.delete('/:id', ctrl.deleteJob);
 
 module.exports = router;

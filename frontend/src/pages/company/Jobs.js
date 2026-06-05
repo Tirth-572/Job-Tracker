@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Edit2, Trash2, Eye, Users, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, RefreshCw, XCircle, Eye, Calendar, Clock } from 'lucide-react';
 import { jobsAPI } from '../../services/api';
 import { Card, Button, Badge, Modal, Input, Textarea, Select, EmptyState, Skeleton } from '../../components/ui';
-import { JOB_TYPE_CONFIG, formatDate, cn } from '../../lib/utils';
+import { JOB_TYPE_CONFIG, formatDate, formatRelativeDate, cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
 const defaultForm = { title: '', description: '', requirements: '', benefits: '', location: '', type: 'FULL_TIME', salaryMin: '', salaryMax: '', experience: '', deadline: '', skills: '' };
@@ -16,16 +17,39 @@ export default function CompanyJobs() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
-  const [filter, setFilter] = useState('');
+  
+  const [activeTab, setActiveTab] = useState('ACTIVE'); // 'ACTIVE' or 'HISTORY'
+  const [historyFilter, setHistoryFilter] = useState(''); // '', 'EXPIRED', 'CLOSED'
 
-  const fetchJobs = async () => {
-    const { data } = await jobsAPI.getCompanyJobs({ status: filter || undefined });
-    setJobs(data.jobs);
-    setTotal(data.total);
-    setLoading(false);
-  };
+  const fetchJobs = useCallback(async () => {
+    setLoading(true);
+    let statusFilter = '';
+    if (activeTab === 'ACTIVE') {
+      statusFilter = 'ACTIVE';
+    } else {
+      statusFilter = historyFilter || 'CLOSED,EXPIRED';
+    }
+    
+    try {
+      const { data } = await jobsAPI.getCompanyJobs({ status: statusFilter });
+      setJobs(data.jobs);
+      setTotal(data.total);
+    } catch (error) {
+      toast.error('Failed to load jobs');
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, historyFilter]);
 
-  useEffect(() => { fetchJobs(); }, [filter]);
+  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+
+  const location = useLocation();
+  useEffect(() => {
+    if (location.state?.openCreate) {
+      openCreate();
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state]);
 
   const openCreate = () => { setEditing(null); setForm(defaultForm); setModal(true); };
   const openEdit = (job) => {
@@ -40,11 +64,17 @@ export default function CompanyJobs() {
       const payload = { ...form, salaryMin: form.salaryMin ? parseInt(form.salaryMin) : null, salaryMax: form.salaryMax ? parseInt(form.salaryMax) : null, skills: form.skills ? form.skills.split(',').map(s => s.trim()).filter(Boolean) : [] };
       if (editing) {
         const { data } = await jobsAPI.updateJob(editing.id, payload);
-        setJobs(prev => prev.map(j => j.id === data.id ? data : j));
+        if (activeTab === 'ACTIVE') {
+          setJobs(prev => prev.map(j => j.id === data.id ? data : j));
+        }
         toast.success('Job updated!');
       } else {
         const { data } = await jobsAPI.createJob(payload);
-        setJobs(prev => [data, ...prev]);
+        if (activeTab === 'ACTIVE') {
+          setJobs(prev => [data, ...prev]);
+        } else {
+          setActiveTab('ACTIVE');
+        }
         toast.success('Job posted!');
       }
       setModal(false);
@@ -60,78 +90,128 @@ export default function CompanyJobs() {
     toast.success('Job deleted');
   };
 
-  const toggleStatus = async (job) => {
-    const newStatus = job.status === 'ACTIVE' ? 'CLOSED' : 'ACTIVE';
-    const { data } = await jobsAPI.updateJob(job.id, { status: newStatus });
-    setJobs(prev => prev.map(j => j.id === data.id ? data : j));
-    toast.success(`Job ${newStatus === 'ACTIVE' ? 'reopened' : 'closed'}`);
+  const closeJob = async (id) => {
+    if (!window.confirm('Are you sure you want to close this job? Candidates will no longer be able to apply.')) return;
+    try {
+      await jobsAPI.closeJob(id);
+      toast.success('Job closed successfully');
+      fetchJobs();
+    } catch (error) {
+      toast.error('Failed to close job');
+    }
+  };
+
+  const repostJob = async (id) => {
+    try {
+      const { data } = await jobsAPI.repostJob(id);
+      toast.success('Job reposted successfully! Please review the details.');
+      setActiveTab('ACTIVE');
+      openEdit(data);
+    } catch (error) {
+      toast.error('Failed to repost job');
+    }
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Job Posts</h1>
-          <p className="text-gray-500 mt-1">{total} jobs posted</p>
+          <h1 className="text-2xl font-bold text-[#0F172A]">Job Posts</h1>
+          <p className="text-[#64748B] mt-1">Manage your active and past job postings</p>
         </div>
-        <Button onClick={openCreate}><Plus size={16} /> Post New Job</Button>
+        <Button onClick={openCreate} className="bg-[#635BFF] hover:bg-[#5146E5] text-white"><Plus size={16} /> Post New Job</Button>
       </div>
 
-      {/* Filter */}
-      <div className="flex gap-2">
-        {[['', 'All'], ['ACTIVE', 'Active'], ['CLOSED', 'Closed'], ['DRAFT', 'Draft']].map(([val, label]) => (
-          <button
-            key={val}
-            onClick={() => setFilter(val)}
-            className={cn('px-4 py-1.5 rounded-full text-sm font-medium transition-all border', filter === val ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300')}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Main Tabs */}
+      <div className="flex border-b border-[#E2E8F0]">
+        <button
+          onClick={() => setActiveTab('ACTIVE')}
+          className={cn('px-6 py-3 font-medium text-sm transition-colors border-b-2', activeTab === 'ACTIVE' ? 'border-[#635BFF] text-[#635BFF]' : 'border-transparent text-[#64748B] hover:text-[#0F172A]')}
+        >
+          Active Jobs
+        </button>
+        <button
+          onClick={() => setActiveTab('HISTORY')}
+          className={cn('px-6 py-3 font-medium text-sm transition-colors border-b-2', activeTab === 'HISTORY' ? 'border-[#635BFF] text-[#635BFF]' : 'border-transparent text-[#64748B] hover:text-[#0F172A]')}
+        >
+          Job History
+        </button>
       </div>
+
+      {/* History Sub-Filter */}
+      {activeTab === 'HISTORY' && (
+        <div className="flex gap-2">
+          {[['', 'All History'], ['EXPIRED', 'Expired Jobs'], ['CLOSED', 'Closed Jobs']].map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setHistoryFilter(val)}
+              className={cn('px-4 py-1.5 rounded-full text-sm font-medium transition-all border', historyFilter === val ? 'bg-[#635BFF]/10 text-[#635BFF] border-[#635BFF]/20' : 'border-[#E2E8F0] text-[#64748B] hover:bg-[#F8FAFC]')}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-24 skeleton rounded-xl" />)}</div>
       ) : jobs.length === 0 ? (
         <Card className="p-12">
-          <EmptyState icon={Briefcase} title="No jobs yet" description="Post your first job to start receiving applications" action={<Button onClick={openCreate}><Plus size={16} /> Post Job</Button>} />
+          <EmptyState 
+            icon={activeTab === 'ACTIVE' ? Briefcase : Clock} 
+            title={activeTab === 'ACTIVE' ? "No active jobs" : "No job history"} 
+            description={activeTab === 'ACTIVE' ? "Post your first job to start receiving applications" : "You haven't closed or expired any jobs yet."} 
+            action={activeTab === 'ACTIVE' ? <Button onClick={openCreate} className="bg-[#635BFF] hover:bg-[#5146E5] text-white"><Plus size={16} /> Post Job</Button> : null} 
+          />
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {jobs.map((job, i) => {
             const typeCfg = JOB_TYPE_CONFIG[job.type] || {};
             return (
               <motion.div key={job.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <Card className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{job.title}</h3>
+                <Card className="p-5 hover:shadow-md transition-shadow">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="text-lg font-bold text-[#0F172A]">{job.title}</h3>
                         <Badge className={typeCfg.color}>{typeCfg.label}</Badge>
-                        <Badge className={job.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>{job.status}</Badge>
+                        <Badge className={job.status === 'ACTIVE' ? 'bg-[#22C55E]/10 text-[#22C55E]' : job.status === 'CLOSED' ? 'bg-[#64748B]/10 text-[#64748B]' : 'bg-[#EF4444]/10 text-[#EF4444]'}>
+                          {job.status}
+                        </Badge>
                       </div>
-                      <p className="text-sm text-gray-500 mt-0.5">{job.location} · Posted {formatDate(job.createdAt)}</p>
+                      
+                      <div className="flex items-center gap-4 text-sm text-[#64748B] flex-wrap">
+                        <span className="flex items-center gap-1.5"><Briefcase size={14} /> {job.location}</span>
+                        <span className="flex items-center gap-1.5"><Users size={14} /> {job._count?.applications || 0} Applications</span>
+                        <span className="flex items-center gap-1.5"><Calendar size={14} /> Posted {formatDate(job.createdAt)}</span>
+                        {job.deadline && <span className="flex items-center gap-1.5 text-[#EF4444]"><Clock size={14} /> Deadline {formatDate(job.deadline)}</span>}
+                        {activeTab === 'HISTORY' && job.closedAt && <span className="flex items-center gap-1.5"><Clock size={14} /> Closed {formatDate(job.closedAt)}</span>}
+                      </div>
+
                       {job.skills?.length > 0 && (
-                        <div className="flex gap-1 mt-2 flex-wrap">
-                          {job.skills.slice(0, 4).map(s => <Badge key={s} className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">{s}</Badge>)}
+                        <div className="flex gap-1 flex-wrap">
+                          {job.skills.slice(0, 4).map(s => <Badge key={s} className="bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0] font-medium">{s}</Badge>)}
                         </div>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                        <Users size={14} />
-                        <span>{job._count?.applications || 0}</span>
-                      </div>
-                      <button onClick={() => toggleStatus(job)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title={job.status === 'ACTIVE' ? 'Close job' : 'Reopen job'}>
-                        {job.status === 'ACTIVE' ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} className="text-gray-400" />}
-                      </button>
-                      <button onClick={() => openEdit(job)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
-                        <Edit2 size={16} className="text-gray-400" />
-                      </button>
-                      <button onClick={() => deleteJob(job.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                        <Trash2 size={16} className="text-red-400" />
-                      </button>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0 md:flex-col md:items-end">
+                      {activeTab === 'ACTIVE' ? (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => openEdit(job)}><Edit2 size={14} /> Edit</Button>
+                          <Button variant="danger" size="sm" onClick={() => closeJob(job.id)}><XCircle size={14} /> Close Job</Button>
+                          <Button variant="ghost" size="sm" onClick={() => deleteJob(job.id)} className="text-[#EF4444] hover:bg-red-50 hover:text-[#EF4444]"><Trash2 size={14} /> Delete</Button>
+                        </>
+                      ) : (
+                        <>
+                          <Link to={`/company/applications?jobId=${job.id}`}>
+                            <Button variant="outline" size="sm"><Users size={14} /> View Applicants</Button>
+                          </Link>
+                          <Button variant="primary" size="sm" onClick={() => repostJob(job.id)} className="bg-[#635BFF] hover:bg-[#5146E5] text-white"><RefreshCw size={14} /> Repost Job</Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -162,9 +242,9 @@ export default function CompanyJobs() {
           <Input label="Skills (comma-separated)" placeholder="React, Node.js, PostgreSQL" value={form.skills} onChange={e => setForm(p => ({ ...p, skills: e.target.value }))} />
           <Input label="Application Deadline" type="date" value={form.deadline} onChange={e => setForm(p => ({ ...p, deadline: e.target.value }))} />
         </div>
-        <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button onClick={save} loading={saving} className="flex-1">{editing ? 'Update Job' : 'Post Job'}</Button>
-          <Button variant="secondary" onClick={() => setModal(false)}>Cancel</Button>
+        <div className="flex gap-3 mt-4 pt-4 border-t border-[#E2E8F0]">
+          <Button onClick={save} loading={saving} className="flex-1 bg-[#635BFF] hover:bg-[#5146E5] text-white">{editing ? 'Update Job' : 'Post Job'}</Button>
+          <Button variant="outline" onClick={() => setModal(false)}>Cancel</Button>
         </div>
       </Modal>
     </div>
