@@ -6,52 +6,53 @@ import { Card, Badge, Button, SkeletonCard, EmptyState } from '../../components/
 import { formatDate, formatRelativeDate, cn, getFileUrl } from '../../lib/utils';
 
 const DynamicTimeline = ({ stages, currentStageId, isRejected }) => {
- const currentStage = stages.find(s => s.id === currentStageId);
- const currentIdx = currentStage ? stages.findIndex(s => s.id === currentStageId) : 0;
+  const timelineStages = stages.filter(s => s.systemType !== 'REJECTED');
+  const currentStage = timelineStages.find(s => s.id === currentStageId) || timelineStages.find(s => s.systemType === 'APPLIED') || timelineStages[0];
+  const currentIdx = currentStage ? timelineStages.findIndex(s => s.id === currentStage.id) : 0;
 
- return (
- <div className="mt-4">
- {isRejected ? (
- <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg">
- <div className="w-3 h-3 rounded-full bg-red-500" />
- <span className="text-sm font-medium text-red-600 ">Application Rejected</span>
- </div>
- ) : (
- <div className="flex items-center gap-0 overflow-x-auto pb-2">
- {stages.map((stage, idx) => {
- const done = idx <= currentIdx;
- const active = idx === currentIdx;
- 
- // Extract a primary color from the stage string (e.g., 'bg-purple-100 text-purple-700' -> 'purple')
- const colorMatch = stage.color?.match(/text-([a-z]+)-(\d+)/);
- const colorClass = colorMatch ? `bg-${colorMatch[1]}-600` : 'bg-primary-600';
- const ringClass = colorMatch ? `ring-${colorMatch[1]}-100 ${colorMatch[1]}-900/30` : 'ring-primary-100';
- const textClass = colorMatch ? `text-${colorMatch[1]}-600` : 'text-primary-600';
+  return (
+    <div className="mt-5 mb-2">
+      {isRejected ? (
+        <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-100">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+          <span className="text-sm font-medium text-red-700">Application Rejected</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-0 overflow-x-auto pb-12 pt-2 px-2 scrollbar-hide">
+          {timelineStages.map((stage, idx) => {
+            const done = idx < currentIdx;
+            const active = idx === currentIdx;
 
- return (
- <React.Fragment key={stage.id}>
- <div className="flex flex-col items-center shrink-0">
- <div className={cn(
- 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all',
- active ? `${colorClass} text-white ring-4 ${ringClass} scale-110` :
- done ? `${colorClass} text-white` : 'bg-gray-200 text-gray-400'
- )}>
- {done && !active ? '✓' : idx + 1}
- </div>
- <p className={cn('text-xs mt-1 text-center max-w-16 leading-tight hidden sm:block', active ? `${textClass} font-semibold` : done ? 'text-gray-600 ' : 'text-gray-400')}>
- {stage.name}
- </p>
- </div>
- {idx < stages.length - 1 && (
- <div className={cn('flex-1 h-0.5 min-w-4 mx-1 transition-all', idx < currentIdx ? colorClass : 'bg-gray-200 ')} />
- )}
- </React.Fragment>
- );
- })}
- </div>
- )}
- </div>
- );
+            return (
+              <React.Fragment key={stage.id}>
+                <div className="flex flex-col items-center shrink-0 relative">
+                  <div className={cn(
+                    'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all z-10',
+                    active ? 'bg-[#635BFF] text-white ring-4 ring-[#635BFF]/20 shadow-md scale-110' :
+                    done ? 'bg-[#635BFF] text-white' : 'bg-[#E2E8F0] text-[#94A3B8]'
+                  )}>
+                    {done ? '✓' : idx + 1}
+                  </div>
+                  <p className={cn(
+                    'absolute top-10 text-[11px] text-center w-20 leading-tight hidden sm:block',
+                    active ? 'text-[#635BFF] font-bold' : done ? 'text-[#334155] font-medium' : 'text-[#94A3B8]'
+                  )}>
+                    {stage.name}
+                  </p>
+                </div>
+                {idx < timelineStages.length - 1 && (
+                  <div className={cn(
+                    'flex-1 h-[2px] min-w-[32px] mx-1 transition-all rounded-full',
+                    idx < currentIdx ? 'bg-[#635BFF]' : 'bg-[#E2E8F0]'
+                  )} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const ApplicationCard = ({ application }) => {

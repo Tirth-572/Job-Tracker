@@ -102,7 +102,7 @@ export default function CompanyApplications() {
  <table className="w-full text-sm">
  <thead className="bg-gray-50 border-b border-gray-200 ">
  <tr>
- {['Candidate', 'Job', 'Applied', 'Stage', 'Interview', 'Actions'].map(h => (
+ {['Candidate', 'Job', 'Applied', 'Stage', 'Actions'].map(h => (
  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
  ))}
  </tr>
@@ -118,21 +118,16 @@ export default function CompanyApplications() {
  <Avatar name={`${app.candidate?.firstName} ${app.candidate?.lastName}`} src={getFileUrl(app.candidate?.avatar)} size="sm" />
  <div>
  <p className="font-medium text-gray-900 ">{app.candidate?.firstName} {app.candidate?.lastName}</p>
- <p className="text-xs text-gray-400">{app.candidate?.location || '—'}</p>
+ <p className="text-xs text-gray-500 truncate w-48" title={app.candidate?.user?.email || app.candidate?.location}>
+ {app.candidate?.user?.email || app.candidate?.location || '—'}
+ </p>
  </div>
  </div>
  </td>
  <td className="px-4 py-3 text-gray-600 ">{app.job?.title}</td>
  <td className="px-4 py-3 text-gray-400 text-xs">{formatRelativeDate(app.appliedAt)}</td>
  <td className="px-4 py-3"><Badge className={stage?.color || 'bg-gray-100 text-gray-700'}>{stage?.name || 'Applied'}</Badge></td>
- <td className="px-4 py-3 text-xs text-gray-400">
- {nextInterview ? (
- <span className="flex flex-col gap-0.5 text-purple-600">
- <span className="font-medium">{nextInterview.customTypeName || stage?.name}</span>
- <span className="flex items-center gap-1"><Calendar size={12} /> {formatDate(nextInterview.scheduledAt)}</span>
- </span>
- ) : '—'}
- </td>
+
  <td className="px-4 py-3">
  <div className="flex gap-1">
  <button

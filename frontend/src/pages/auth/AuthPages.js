@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, User, Building2 } from 'lucide-react';
+import { User, Building2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Input, Select } from '../../components/ui';
 import toast from 'react-hot-toast';
@@ -23,7 +23,6 @@ export const LoginPage = () => {
   const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [pendingGoogleCredential, setPendingGoogleCredential] = useState(null);
@@ -161,23 +160,14 @@ export const LoginPage = () => {
               onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
               required
             />
-            <div className="relative">
-              <Input
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                value={form.password}
-                onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(p => !p)}
-                className="absolute right-3 top-8 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
+            <Input
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              value={form.password}
+              onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+              required
+            />
 
             <Button type="submit" loading={loading} className="w-full" size="lg">
               Sign In

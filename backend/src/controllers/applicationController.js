@@ -110,7 +110,7 @@ exports.getCompanyApplications = asyncHandler(async (req, res) => {
       where,
       include: {
         job: { select: { title: true } },
-        candidate: true,
+        candidate: { include: { user: { select: { email: true } } } },
         stage: true,
         interviews: { orderBy: { scheduledAt: 'asc' }, take: 1 },
       },
