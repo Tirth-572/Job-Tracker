@@ -118,6 +118,17 @@ const templates = {
       <p style="color:#475569;">Please review your offer letter from your dashboard and confirm your acceptance.</p>
       <a href="${dashboardLink}" style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;margin-top:16px;">View Offer Letter →</a>
     `),
+
+  otpVerification: ({ code }) =>
+    baseTemplate(`
+      <h2 style="color:#1e293b;margin:0 0 8px;">Your Verification Code 🔐</h2>
+      <p style="color:#64748b;margin:0 0 24px;">Hello,</p>
+      <p style="color:#475569;line-height:1.7;">Please use the following 6-digit code to verify your account or login. This code is valid for 5 minutes.</p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:24px;border-radius:12px;margin:24px 0;text-align:center;">
+        <span style="font-size:32px;font-weight:700;color:#4f46e5;letter-spacing:4px;">${code}</span>
+      </div>
+      <p style="color:#475569;font-size:14px;">If you did not request this code, please ignore this email.</p>
+    `),
 };
 
 const getEmailTemplate = (templateName, data) => {

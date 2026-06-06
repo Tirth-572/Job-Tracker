@@ -7,6 +7,7 @@ const { authenticate } = require('../middleware/auth');
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/google', authController.googleLogin);
+router.post('/send-otp', authController.sendOtp);
 
 router.get('/me', authenticate, authController.getMe);
 router.put('/password', authenticate, authController.changePassword);

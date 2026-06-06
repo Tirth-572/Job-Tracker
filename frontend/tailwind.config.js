@@ -1,57 +1,51 @@
-const colors = require('tailwindcss/colors');
-
 module.exports = {
   darkMode: 'class',
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
       colors: {
+        brand: {
+          primary: '#71C9CE',
+          secondary: '#A6E3E9',
+          background: '#CBF1F5',
+          surface: '#E3FDFD',
+        },
         primary: {
-          50: '#e0f2f2',
-          100: '#b3e0e0',
-          200: '#80cdcd',
-          300: '#4db9b9',
-          400: '#24b1b1', // Vibrant Teal
-          500: '#1c8d8d',
-          600: '#007979', // Deep Teal
-          700: '#006060',
-          800: '#004848',
-          900: '#003030',
+          DEFAULT: '#71C9CE',
+          hover: '#A6E3E9',
         },
-        accent: {
-          50: '#fffcf9',
-          100: '#fff0e4', // Soft Peach
-          200: '#ffe0c5', // Warm Apricot
-          300: '#ffca9e',
-          400: '#ffad6b',
-          500: '#ff8a38',
-        },
-        gray: colors.slate,
         secondary: {
-          DEFAULT: '#24b1b1',
-          500: '#24b1b1',
+          DEFAULT: '#A6E3E9',
+          hover: '#71C9CE',
         },
-        success: '#10B981',
-        warning: '#F59E0B',
-        danger: '#EF4444',
+        background: '#CBF1F5',
+        surface: '#E3FDFD',
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      borderRadius: {
+        xl: '12px',
+        '2xl': '16px',
+        '3xl': '20px',
       },
       boxShadow: {
-        'soft': '0 8px 30px rgba(0, 0, 0, 0.04)',
-        'soft-md': '0 10px 40px rgba(0, 0, 0, 0.06)',
-        'soft-lg': '0 20px 50px rgba(0, 0, 0, 0.08)',
+        card: '0 4px 20px rgba(0, 0, 0, 0.03)',
+        'card-hover': '0 10px 30px rgba(113, 201, 206, 0.15)',
+        brand: '0 4px 14px rgba(113,201,206,0.35)',
+        'brand-lg': '0 8px 24px rgba(113,201,206,0.4)',
+        inner: 'inset 0 1px 3px rgba(0,0,0,0.06)',
+        soft: '0 2px 10px rgba(113, 201, 206, 0.1)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-in-out',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'slide-down': 'slideDown 0.3s ease-out',
+        'fade-in': 'fadeIn 0.2s ease-out',
+        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        shimmer: 'shimmer 1.6s ease-in-out infinite',
       },
       keyframes: {
-        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
-        slideUp: { '0%': { transform: 'translateY(10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
-        slideDown: { '0%': { transform: 'translateY(-10px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
+        fadeIn: { from: { opacity: 0 }, to: { opacity: 1 } },
+        slideUp: { from: { transform: 'translateY(10px)', opacity: 0 }, to: { transform: 'translateY(0)', opacity: 1 } },
+        shimmer: { '0%': { backgroundPosition: '200% 0' }, '100%': { backgroundPosition: '-200% 0' } },
       },
     },
   },

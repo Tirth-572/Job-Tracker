@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Calendar, Download } from 'lucide-react';
 import { applicationAPI, workflowAPI } from '../../services/api';
-import { Card, Badge, Button, Avatar, EmptyState, Modal, Select, Textarea, Input } from '../../components/ui';
+import { Card, Badge, Button, Avatar, EmptyState, Modal, Select, Textarea, Input, SkeletonCard } from '../../components/ui';
 import { formatDate, formatRelativeDate, cn, getFileUrl } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
@@ -14,6 +14,7 @@ export default function CompanyApplications() {
  const [filter, setFilter] = useState('');
  const [page, setPage] = useState(1);
  const [selected, setSelected] = useState(null);
+ const [viewModal, setViewModal] = useState(false);
  const [statusModal, setStatusModal] = useState(false);
  const [interviewModal, setInterviewModal] = useState(false);
  const [statusForm, setStatusForm] = useState({ stageId: '', notes: '', rejectionReason: '' });
@@ -77,73 +78,79 @@ export default function CompanyApplications() {
  };
 
  return (
- <div className="max-w-7xl mx-auto space-y-5">
- <div>
- <h1 className="text-2xl font-bold text-gray-900 ">Applications</h1>
- <p className="text-gray-500 mt-1">{total} total applications</p>
+ <div className="max-w-7xl mx-auto space-y-6">
+ <div className="page-header">
+ <h1 className="page-title">Applications</h1>
+ <p className="page-subtitle">{total} total applications received</p>
  </div>
 
- <div className="flex flex-wrap gap-2">
- <button onClick={() => { setFilter(''); setPage(1); }} className={cn('px-4 py-1.5 rounded-full text-sm font-medium transition-all border', !filter ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 text-gray-600 ')}>All</button>
+ <div className="flex flex-wrap gap-3">
+ <button onClick={() => { setFilter(''); setPage(1); }} className={cn('filter-pill', !filter ? 'filter-pill-active' : 'filter-pill-inactive')}>All</button>
  {stages.map(s => (
- <button key={s.id} onClick={() => { setFilter(s.id); setPage(1); }} className={cn('px-4 py-1.5 rounded-full text-sm font-medium transition-all border', filter === s.id ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 text-gray-600 hover:border-gray-300')}>
+ <button key={s.id} onClick={() => { setFilter(s.id); setPage(1); }} className={cn('filter-pill', filter === s.id ? 'filter-pill-active' : 'filter-pill-inactive')}>
  {s.name}
  </button>
  ))}
  </div>
 
  {loading ? (
- <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-20 skeleton rounded-xl bg-gray-200 animate-pulse" />)}</div>
+ <div className="space-y-4">{[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}</div>
  ) : applications.length === 0 ? (
- <Card className="p-12"><EmptyState icon={FileText} title="No applications" description="No applications match the selected filter" /></Card>
+ <Card className="p-16"><EmptyState icon={FileText} title="No applications" description="No applications match the selected filter" /></Card>
  ) : (
- <Card className="overflow-hidden">
+ <Card className="overflow-hidden border border-brand-primary/10">
  <div className="overflow-x-auto">
  <table className="w-full text-sm">
- <thead className="bg-gray-50 border-b border-gray-200 ">
+ <thead className="bg-brand-surface border-b border-brand-primary/20">
  <tr>
  {['Candidate', 'Job', 'Applied', 'Stage', 'Actions'].map(h => (
- <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+ <th key={h} className="text-left px-5 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
  ))}
  </tr>
  </thead>
- <tbody className="divide-y divide-gray-100 ">
+ <tbody className="divide-y divide-brand-primary/10">
  {applications.map((app, i) => {
  const stage = app.stage || stages.find(s => s.systemType === 'APPLIED');
  const nextInterview = app.interviews?.[0];
  return (
- <motion.tr key={app.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="hover:bg-gray-50 :bg-gray-800/50 transition-colors">
- <td className="px-4 py-3">
- <div className="flex items-center gap-2">
+ <motion.tr key={app.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="hover:bg-brand-bg transition-colors">
+ <td className="px-5 py-4">
+ <div className="flex items-center gap-3">
  <Avatar name={`${app.candidate?.firstName} ${app.candidate?.lastName}`} src={getFileUrl(app.candidate?.avatar)} size="sm" />
  <div>
- <p className="font-medium text-gray-900 ">{app.candidate?.firstName} {app.candidate?.lastName}</p>
- <p className="text-xs text-gray-500 truncate w-48" title={app.candidate?.user?.email || app.candidate?.location}>
+ <p className="font-bold text-gray-900 ">{app.candidate?.firstName} {app.candidate?.lastName}</p>
+ <p className="text-xs font-medium text-gray-500 truncate w-48" title={app.candidate?.user?.email || app.candidate?.location}>
  {app.candidate?.user?.email || app.candidate?.location || '—'}
  </p>
  </div>
  </div>
  </td>
- <td className="px-4 py-3 text-gray-600 ">{app.job?.title}</td>
- <td className="px-4 py-3 text-gray-400 text-xs">{formatRelativeDate(app.appliedAt)}</td>
- <td className="px-4 py-3"><Badge className={stage?.color || 'bg-gray-100 text-gray-700'}>{stage?.name || 'Applied'}</Badge></td>
+ <td className="px-5 py-4 font-bold text-gray-900">{app.job?.title}</td>
+ <td className="px-5 py-4 text-gray-500 font-medium text-xs">{formatRelativeDate(app.appliedAt)}</td>
+ <td className="px-5 py-4"><Badge className={stage?.color || 'bg-brand-bg text-brand-primary'}>{stage?.name || 'Applied'}</Badge></td>
 
- <td className="px-4 py-3">
- <div className="flex gap-1">
+ <td className="px-5 py-4">
+ <div className="flex gap-2">
+ <button
+ onClick={() => { setSelected(app); setViewModal(true); }}
+ className="px-3 py-1.5 text-xs font-bold bg-white text-gray-600 rounded-xl hover:bg-brand-primary/10 hover:text-brand-primary border border-brand-primary/20 transition-colors shadow-sm"
+ >
+ View
+ </button>
  <button
  onClick={() => { setSelected(app); setStatusForm({ stageId: app.stageId, notes: app.notes || '', rejectionReason: app.rejectionReason || '' }); setStatusModal(true); }}
- className="px-2.5 py-1.5 text-xs bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors"
+ className="px-3 py-1.5 text-xs font-bold bg-white text-gray-600 rounded-xl hover:bg-brand-primary/10 hover:text-brand-primary border border-brand-primary/20 transition-colors shadow-sm"
  >
  Update
  </button>
  <button
  onClick={() => { setSelected(app); setInterviewForm(p => ({ ...p, customTypeName: stage?.name || 'Interview' })); setInterviewModal(true); }}
- className="px-2.5 py-1.5 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+ className="px-3 py-1.5 text-xs font-bold bg-white text-brand-primary rounded-xl hover:bg-brand-primary hover:text-white border border-brand-primary transition-all shadow-sm"
  >
  Interview
  </button>
- {app.candidate?.resumeUrl && (
- <a href={app.candidate.resumeUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 hover:bg-gray-100 :bg-gray-700 rounded-lg text-gray-400">
+ {(app.resumeUrl || app.candidate?.resumeUrl) && (
+ <a href={getFileUrl(app.resumeUrl || app.candidate?.resumeUrl)} target="_blank" rel="noopener noreferrer" className="p-2 bg-brand-surface hover:bg-brand-primary hover:text-white rounded-xl text-brand-primary transition-all shadow-sm border border-brand-primary/20 flex items-center justify-center">
  <Download size={14} />
  </a>
  )}
@@ -156,7 +163,7 @@ export default function CompanyApplications() {
  </table>
  </div>
  {total > 15 && (
- <div className="flex justify-center gap-2 p-4 border-t border-gray-200 ">
+ <div className="flex justify-center gap-3 p-5 border-t border-brand-primary/10 bg-brand-surface">
  <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
  <Button variant="secondary" size="sm" disabled={applications.length < 15} onClick={() => setPage(p => p + 1)}>Next</Button>
  </div>
@@ -164,13 +171,56 @@ export default function CompanyApplications() {
  </Card>
  )}
 
+ {/* View Modal */}
+ <Modal isOpen={viewModal} onClose={() => setViewModal(false)} title="Application Details" size="lg">
+ {selected && (
+ <div className="space-y-5">
+ <div className="p-5 bg-brand-surface rounded-2xl border border-brand-primary/20 flex items-center gap-4">
+ <Avatar name={`${selected.candidate?.firstName} ${selected.candidate?.lastName}`} src={getFileUrl(selected.candidate?.avatar)} size="md" />
+ <div>
+ <h3 className="font-bold text-gray-900 text-lg">{selected.candidate?.firstName} {selected.candidate?.lastName}</h3>
+ <p className="text-sm font-medium text-gray-500">{selected.candidate?.user?.email || selected.candidate?.location || 'Candidate'}</p>
+ </div>
+ </div>
+ <div className="grid grid-cols-2 gap-4">
+ <div className="p-4 bg-brand-bg rounded-xl border border-brand-primary/10">
+ <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Applied for</p>
+ <p className="font-bold text-brand-primary">{selected.job?.title}</p>
+ </div>
+ <div className="p-4 bg-brand-bg rounded-xl border border-brand-primary/10">
+ <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Applied Date</p>
+ <p className="font-bold text-gray-900">{new Date(selected.appliedAt).toLocaleString()}</p>
+ </div>
+ </div>
+ {(selected.resumeUrl || selected.candidate?.resumeUrl) && (
+ <div>
+ <p className="text-sm font-bold text-gray-900 mb-2">Resume</p>
+ <iframe 
+ src={getFileUrl(selected.resumeUrl || selected.candidate?.resumeUrl)} 
+ className="w-full h-[400px] border border-brand-primary/20 rounded-2xl shadow-soft"
+ title="Resume PDF"
+ />
+ <div className="mt-3 text-right">
+ <a href={getFileUrl(selected.resumeUrl || selected.candidate?.resumeUrl)} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-brand-primary hover:text-brand-secondary transition-colors">
+ Open in new tab
+ </a>
+ </div>
+ </div>
+ )}
+ <div className="pt-6 border-t border-brand-primary/10 flex gap-4">
+ <button onClick={() => setViewModal(false)} className="btn-ghost flex-1">Close</button>
+ </div>
+ </div>
+ )}
+ </Modal>
+
  {/* Update Status Modal */}
  <Modal isOpen={statusModal} onClose={() => setStatusModal(false)} title="Update Application Stage">
- <div className="space-y-3">
+ <div className="space-y-4">
  {selected && (
- <div className="p-3 bg-gray-50 rounded-lg">
- <p className="font-medium">{selected.candidate?.firstName} {selected.candidate?.lastName}</p>
- <p className="text-sm text-gray-500">{selected.job?.title}</p>
+ <div className="p-4 bg-brand-bg rounded-xl border border-brand-primary/20">
+ <p className="font-bold text-gray-900">{selected.candidate?.firstName} {selected.candidate?.lastName}</p>
+ <p className="text-sm font-medium text-gray-500 mt-1">{selected.job?.title}</p>
  </div>
  )}
  <Select label="New Stage" value={statusForm.stageId} onChange={e => setStatusForm(p => ({ ...p, stageId: e.target.value }))}>
@@ -181,26 +231,27 @@ export default function CompanyApplications() {
  {stages.find(s => s.id === statusForm.stageId)?.systemType === 'REJECTED' && (
  <Textarea label="Rejection Reason (sent to candidate)" rows={2} value={statusForm.rejectionReason} onChange={e => setStatusForm(p => ({ ...p, rejectionReason: e.target.value }))} />
  )}
- <div className="bg-amber-50 p-3 rounded-lg text-xs text-amber-700 ">
- ⚡ An automatic notification will be sent to the candidate when you update the stage.
+ <div className="bg-brand-surface p-4 rounded-xl text-sm text-brand-primary font-medium border border-brand-primary/30 flex items-start gap-2">
+ <span className="text-brand-primary">⚡</span>
+ An automatic notification will be sent to the candidate when you update the stage.
  </div>
- <div className="flex gap-3">
- <Button onClick={handleStatusUpdate} loading={saving} className="flex-1">Update Stage</Button>
- <Button variant="secondary" onClick={() => setStatusModal(false)}>Cancel</Button>
+ <div className="flex gap-4 mt-6 pt-6 border-t border-brand-primary/10">
+ <button onClick={handleStatusUpdate} disabled={saving} className="btn-primary flex-1">Update Stage</button>
+ <button onClick={() => setStatusModal(false)} className="btn-ghost">Cancel</button>
  </div>
  </div>
  </Modal>
 
  {/* Interview Modal */}
  <Modal isOpen={interviewModal} onClose={() => setInterviewModal(false)} title="Schedule Interview">
- <div className="space-y-3">
+ <div className="space-y-4">
  <Input label="Interview Name" value={interviewForm.customTypeName || ''} onChange={e => setInterviewForm(p => ({ ...p, customTypeName: e.target.value }))} required />
  <Input label="Date & Time" type="datetime-local" value={interviewForm.scheduledAt} onChange={e => setInterviewForm(p => ({ ...p, scheduledAt: e.target.value }))} />
  <Input label="Duration (minutes)" type="number" value={interviewForm.duration} onChange={e => setInterviewForm(p => ({ ...p, duration: parseInt(e.target.value) }))} />
  <Input label="Meeting Link" placeholder="https://meet.google.com/..." value={interviewForm.meetingLink} onChange={e => setInterviewForm(p => ({ ...p, meetingLink: e.target.value }))} />
- <div className="flex gap-3">
- <Button onClick={handleScheduleInterview} loading={saving} className="flex-1">Schedule</Button>
- <Button variant="secondary" onClick={() => setInterviewModal(false)}>Cancel</Button>
+ <div className="flex gap-4 mt-6 pt-6 border-t border-brand-primary/10">
+ <button onClick={handleScheduleInterview} disabled={saving} className="btn-primary flex-1">Schedule</button>
+ <button onClick={() => setInterviewModal(false)} className="btn-ghost">Cancel</button>
  </div>
  </div>
  </Modal>

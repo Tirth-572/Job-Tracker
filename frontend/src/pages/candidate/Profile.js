@@ -6,11 +6,15 @@ import { formatDate, getFileUrl } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import { useDropzone } from 'react-dropzone';
+import { INDUSTRIES } from '../auth/AuthPages';
+
+import { useLocation } from 'react-router-dom';
 
 const SKILL_SUGGESTIONS = ['JavaScript', 'React', 'Node.js', 'Python', 'Java', 'TypeScript', 'SQL', 'AWS', 'Docker', 'Git'];
 
 export default function CandidateProfile() {
  const { user, refreshUser } = useAuth();
+ const location = useLocation();
  const [profile, setProfile] = useState(null);
  const [loading, setLoading] = useState(true);
  const [editProfile, setEditProfile] = useState(false);
@@ -29,6 +33,27 @@ export default function CandidateProfile() {
  candidateAPI.getProfile().then(({ data }) => {
  setProfile(data);
  setProfileForm(data);
+ 
+ if (location.state?.openModal) {
+    const key = location.state.openModal;
+    const editProfileFields = ['firstName', 'lastName', 'phone', 'dob', 'gender', 'bio', 'location', 'industry', 'jobTitle', 'linkedinUrl', 'githubUrl', 'portfolioUrl', 'skills'];
+    if (editProfileFields.includes(key)) {
+        setProfileForm(data);
+        setEditProfile(true);
+    } else if (key === 'experience') {
+        setEditingExp(null);
+        setExpForm({ current: false });
+        setExpModal(true);
+    } else if (key === 'education') {
+        setEditingEdu(null);
+        setEduForm({ current: false });
+        setEduModal(true);
+    } else if (key === 'avatar' || key === 'resumeUrl') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    // Clean up state
+    window.history.replaceState({}, document.title);
+ }
  }).finally(() => setLoading(false));
  }, []);
 
@@ -60,12 +85,14 @@ export default function CandidateProfile() {
  };
 
  const handleRemoveResume = async () => {
- if (!window.confirm('Remove your resume?')) return;
+ if (!window.confirm('Are you sure you want to remove your resume?')) return;
  try {
- await candidateAPI.updateProfile({ ...profile, resumeUrl: null, resumeName: null });
+ await candidateAPI.removeResume();
  setProfile(p => ({ ...p, resumeUrl: null, resumeName: null }));
- toast.success('Resume removed');
- } catch { toast.error('Failed to remove resume'); }
+ toast.success('Resume removed successfully!');
+ } catch (err) {
+ toast.error(err.response?.data?.message || 'Failed to remove resume');
+ }
  };
 
  const handleAvatarUpload = async (file) => {
@@ -94,6 +121,7 @@ export default function CandidateProfile() {
  try {
  const { data } = await candidateAPI.updateProfile(profileForm);
  setProfile(data);
+ await refreshUser();
  setEditProfile(false);
  toast.success('Profile updated!');
  } catch { toast.error('Update failed'); }
@@ -218,10 +246,12 @@ export default function CandidateProfile() {
  <div className="flex items-start justify-between">
  <div>
  <h2 className="text-xl font-bold text-gray-900 ">{profile?.firstName} {profile?.lastName}</h2>
- <p className="text-gray-500">{user?.email}</p>
+ {profile?.jobTitle && <p className="text-brand-primary font-bold text-sm mt-0.5">{profile.jobTitle}</p>}
+ <p className="text-gray-500 mt-1">{user?.email}</p>
  {profile?.location && <p className="text-sm text-gray-400 mt-0.5">{profile.location}</p>}
- {(profile?.dob || profile?.gender) && (
+ {(profile?.dob || profile?.gender || profile?.industry) && (
    <p className="text-xs text-gray-400 mt-1 flex gap-2">
+     {profile?.industry && <span>Industry: {profile.industry}</span>}
      {profile?.dob && <span>DOB: {new Date(profile.dob).toLocaleDateString()}</span>}
      {profile?.gender && <span>Gender: {profile.gender}</span>}
    </p>
@@ -442,8 +472,20 @@ export default function CandidateProfile() {
               </select>
             </div>
           </div>
- <Input label="Phone" value={profileForm.phone || ''} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} />
- <Input label="Location" value={profileForm.location || ''} onChange={e => setProfileForm(p => ({ ...p, location: e.target.value }))} />
+ <div className="grid grid-cols-2 gap-3">
+   <Input label="Job Title" placeholder="e.g. Frontend Developer" value={profileForm.jobTitle || ''} onChange={e => setProfileForm(p => ({ ...p, jobTitle: e.target.value }))} />
+   <div>
+     <label className="label">Industry</label>
+     <select className="input mt-1" value={profileForm.industry || ''} onChange={e => setProfileForm(p => ({ ...p, industry: e.target.value }))}>
+       <option value="">Select</option>
+       {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+     </select>
+   </div>
+ </div>
+ <div className="grid grid-cols-2 gap-3">
+   <Input label="Phone" value={profileForm.phone || ''} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} />
+   <Input label="Location" value={profileForm.location || ''} onChange={e => setProfileForm(p => ({ ...p, location: e.target.value }))} />
+ </div>
  <Textarea label="Bio" rows={3} value={profileForm.bio || ''} onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))} />
  <Input label="LinkedIn URL" value={profileForm.linkedinUrl || ''} onChange={e => setProfileForm(p => ({ ...p, linkedinUrl: e.target.value }))} />
  <Input label="GitHub URL" value={profileForm.githubUrl || ''} onChange={e => setProfileForm(p => ({ ...p, githubUrl: e.target.value }))} />

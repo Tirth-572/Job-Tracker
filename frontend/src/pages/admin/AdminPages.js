@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Building2, Briefcase, FileText, Shield, ShieldOff, CheckCircle, XCircle, Trash2, Search } from 'lucide-react';
 import { adminAPI } from '../../services/api';
-import { Card, StatCard, Badge, Button, Skeleton } from '../../components/ui';
+import { Card, StatCard, Badge, Button, SkeletonCard } from '../../components/ui';
 import { formatDate, cn, getFileUrl, getGreeting } from '../../lib/utils';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
@@ -25,36 +25,36 @@ export default function AdminDashboard() {
 
  return (
  <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 max-w-7xl mx-auto">
- <motion.div variants={item}>
- <h1 className="text-2xl font-bold text-gray-900 ">{getGreeting()}, Admin! 👋</h1>
- <p className="text-gray-500 mt-1">Platform-wide overview and management</p>
+ <motion.div variants={item} className="page-header mb-0">
+ <h1 className="page-title">{getGreeting()}, Admin! 👋</h1>
+ <p className="page-subtitle">Platform-wide overview and management</p>
  </motion.div>
 
- <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
- <StatCard icon={Users} label="Total Users" value={stats?.users || 0} color="primary" />
- <StatCard icon={Building2} label="Companies" value={stats?.companies || 0} color="amber" />
+ <motion.div variants={item} className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+ <StatCard icon={Users} label="Total Users" value={stats?.users || 0} color="brand" />
+ <StatCard icon={Building2} label="Companies" value={stats?.companies || 0} color="cyan" />
  <StatCard icon={Briefcase} label="Jobs Posted" value={stats?.jobs || 0} color="green" />
- <StatCard icon={FileText} label="Applications" value={stats?.applications || 0} color="primary" />
+ <StatCard icon={FileText} label="Applications" value={stats?.applications || 0} color="brand" />
  </motion.div>
 
  <motion.div variants={item}>
- <Card className="p-5">
- <h2 className="font-semibold mb-4 text-gray-900 ">Applications by Status</h2>
+ <Card className="p-6">
+ <h2 className="text-lg font-bold mb-6 text-gray-900">Applications by Status</h2>
  {loading ? (
- <div className="h-52 skeleton rounded-xl" />
+ <div className="h-64 skeleton rounded-2xl" />
  ) : (
- <ResponsiveContainer width="100%" height={200}>
+ <ResponsiveContainer width="100%" height={250}>
  <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
  <defs>
  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
- <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+ <stop offset="5%" stopColor="#71C9CE" stopOpacity={0.4} />
+ <stop offset="95%" stopColor="#71C9CE" stopOpacity={0} />
  </linearGradient>
  </defs>
- <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-20} textAnchor="end" height={45} />
- <YAxis tick={{ fontSize: 11 }} />
- <Tooltip contentStyle={{ borderRadius: '8px', fontSize: '13px' }} />
- <Area type="monotone" dataKey="value" stroke="#6366f1" fill="url(#grad)" strokeWidth={2} />
+ <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6B7280', fontWeight: 600 }} angle={-20} textAnchor="end" height={45} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} />
+ <YAxis tick={{ fontSize: 11, fill: '#6B7280', fontWeight: 600 }} tickLine={false} axisLine={false} />
+ <Tooltip contentStyle={{ borderRadius: '12px', fontSize: '13px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }} />
+ <Area type="monotone" dataKey="value" stroke="#71C9CE" fill="url(#grad)" strokeWidth={3} />
  </AreaChart>
  </ResponsiveContainer>
  )}
@@ -89,18 +89,18 @@ export function AdminUsers() {
  };
 
  return (
- <div className="max-w-7xl mx-auto space-y-5">
- <div>
- <h1 className="text-2xl font-bold text-gray-900 ">Users</h1>
- <p className="text-gray-500 mt-1">{total} total users</p>
+ <div className="max-w-7xl mx-auto space-y-6">
+ <div className="page-header mb-0">
+ <h1 className="page-title">Users</h1>
+ <p className="page-subtitle">{total} total users</p>
  </div>
 
- <Card className="p-4 flex gap-3 flex-wrap">
+ <Card className="p-5 flex gap-4 flex-wrap">
  <div className="relative flex-1 min-w-48">
- <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
- <input className="input pl-9" placeholder="Search by email or name..." value={search} onChange={e => setSearch(e.target.value)} />
+ <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+ <input className="input pl-10" placeholder="Search by email or name..." value={search} onChange={e => setSearch(e.target.value)} />
  </div>
- <select className="input w-40" value={role} onChange={e => setRole(e.target.value)}>
+ <select className="input w-48" value={role} onChange={e => setRole(e.target.value)}>
  <option value="">All Roles</option>
  <option value="CANDIDATE">Candidate</option>
  <option value="COMPANY">Company</option>
@@ -108,46 +108,46 @@ export function AdminUsers() {
  </select>
  </Card>
 
- <Card className="overflow-hidden">
+ <Card className="overflow-hidden border border-brand-primary/10">
  <div className="overflow-x-auto">
  <table className="w-full text-sm">
- <thead className="bg-gray-50 border-b border-gray-200 ">
+ <thead className="bg-brand-surface border-b border-brand-primary/20">
  <tr>
  {['User', 'Email', 'Role', 'Status', 'Joined', 'Actions'].map(h => (
- <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+ <th key={h} className="text-left px-5 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
  ))}
  </tr>
  </thead>
- <tbody className="divide-y divide-gray-100 ">
+ <tbody className="divide-y divide-brand-primary/10">
  {loading ? (
  [...Array(5)].map((_, i) => (
  <tr key={i}>
- {[...Array(6)].map((_, j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>)}
+ {[...Array(6)].map((_, j) => <td key={j} className="px-5 py-4"><div className="h-5 skeleton rounded" /></td>)}
  </tr>
  ))
  ) : users.map(user => (
- <tr key={user.id} className="hover:bg-gray-50 :bg-gray-800/50 transition-colors">
- <td className="px-4 py-3">
- <p className="font-medium text-gray-900 ">
+ <tr key={user.id} className="hover:bg-brand-bg transition-colors">
+ <td className="px-5 py-4">
+ <p className="font-bold text-gray-900 ">
  {user.candidate ? `${user.candidate.firstName} ${user.candidate.lastName}` : user.company?.name || '—'}
  </p>
  </td>
- <td className="px-4 py-3 text-gray-500">{user.email}</td>
- <td className="px-4 py-3">
- <Badge className={user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : user.role === 'COMPANY' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+ <td className="px-5 py-4 font-medium text-gray-500">{user.email}</td>
+ <td className="px-5 py-4">
+ <Badge className={user.role === 'ADMIN' ? 'bg-brand-bg text-brand-primary border-brand-primary/20' : user.role === 'COMPANY' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-600'}>
  {user.role}
  </Badge>
  </td>
- <td className="px-4 py-3">
- <Badge className={user.isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}>
+ <td className="px-5 py-4">
+ <Badge className={user.isBlocked ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-600'}>
  {user.isBlocked ? 'Blocked' : 'Active'}
  </Badge>
  </td>
- <td className="px-4 py-3 text-gray-500">{formatDate(user.createdAt)}</td>
- <td className="px-4 py-3">
+ <td className="px-5 py-4 font-medium text-gray-500">{formatDate(user.createdAt)}</td>
+ <td className="px-5 py-4">
  <button
  onClick={() => toggleBlock(user)}
- className={cn('p-1.5 rounded-lg transition-colors', user.isBlocked ? 'hover:bg-green-50 text-green-500' : 'hover:bg-red-50 text-red-400')}
+ className={cn('p-2 rounded-xl transition-all border', user.isBlocked ? 'hover:bg-green-50 text-green-500 border-green-200' : 'hover:bg-red-50 text-red-400 border-red-200')}
  title={user.isBlocked ? 'Unblock' : 'Block'}
  >
  {user.isBlocked ? <Shield size={16} /> : <ShieldOff size={16} />}
@@ -159,7 +159,7 @@ export function AdminUsers() {
  </table>
  </div>
  {total > 20 && (
- <div className="flex justify-center gap-2 p-4 border-t border-gray-200 ">
+ <div className="flex justify-center gap-3 p-5 border-t border-brand-primary/10 bg-brand-surface">
  <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
  <Button variant="secondary" size="sm" disabled={users.length < 20} onClick={() => setPage(p => p + 1)}>Next</Button>
  </div>
@@ -192,60 +192,60 @@ export function AdminCompanies() {
  };
 
  return (
- <div className="max-w-7xl mx-auto space-y-5">
- <div>
- <h1 className="text-2xl font-bold text-gray-900 ">Companies</h1>
+ <div className="max-w-7xl mx-auto space-y-6">
+ <div className="page-header mb-0">
+ <h1 className="page-title">Companies</h1>
  </div>
 
- <Card className="p-4">
+ <Card className="p-5">
  <div className="relative">
- <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
- <input className="input pl-9 max-w-sm" placeholder="Search companies..." value={search} onChange={e => setSearch(e.target.value)} />
+ <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+ <input className="input pl-10 max-w-md" placeholder="Search companies..." value={search} onChange={e => setSearch(e.target.value)} />
  </div>
  </Card>
 
- <Card className="overflow-hidden">
+ <Card className="overflow-hidden border border-brand-primary/10">
  <div className="overflow-x-auto">
  <table className="w-full text-sm">
- <thead className="bg-gray-50 border-b border-gray-200 ">
+ <thead className="bg-brand-surface border-b border-brand-primary/20">
  <tr>
  {['Company', 'Industry', 'Jobs', 'Verified', 'Status', 'Actions'].map(h => (
- <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+ <th key={h} className="text-left px-5 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
  ))}
  </tr>
  </thead>
- <tbody className="divide-y divide-gray-100 ">
+ <tbody className="divide-y divide-brand-primary/10">
  {loading ? (
  [...Array(5)].map((_, i) => (
- <tr key={i}>{[...Array(6)].map((_, j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>)}</tr>
+ <tr key={i}>{[...Array(6)].map((_, j) => <td key={j} className="px-5 py-4"><div className="h-5 skeleton rounded" /></td>)}</tr>
  ))
  ) : companies.map(c => (
- <tr key={c.id} className="hover:bg-gray-50 :bg-gray-800/50">
- <td className="px-4 py-3">
- <div className="flex items-center gap-2">
- {c.logo ? <img src={getFileUrl(c.logo)} alt="" className="w-8 h-8 rounded-lg object-contain" /> : <div className="w-8 h-8 rounded-lg bg-gray-100 " />}
- <span className="font-medium text-gray-900 ">{c.name}</span>
+ <tr key={c.id} className="hover:bg-brand-bg transition-colors">
+ <td className="px-5 py-4">
+ <div className="flex items-center gap-3">
+ {c.logo ? <img src={getFileUrl(c.logo)} alt="" className="w-10 h-10 rounded-xl object-contain border border-brand-primary/20 p-1 bg-white" /> : <div className="w-10 h-10 rounded-xl bg-brand-surface border border-brand-primary/20" />}
+ <span className="font-bold text-gray-900 ">{c.name}</span>
  </div>
  </td>
- <td className="px-4 py-3 text-gray-500">{c.industry || '—'}</td>
- <td className="px-4 py-3 text-gray-500">{c._count?.jobs || 0}</td>
- <td className="px-4 py-3">
- <Badge className={c.isVerified ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
+ <td className="px-5 py-4 font-medium text-gray-500">{c.industry || '—'}</td>
+ <td className="px-5 py-4 font-medium text-gray-500">{c._count?.jobs || 0}</td>
+ <td className="px-5 py-4">
+ <Badge className={c.isVerified ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}>
  {c.isVerified ? 'Verified' : 'Unverified'}
  </Badge>
  </td>
- <td className="px-4 py-3">
- <Badge className={c.isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}>
+ <td className="px-5 py-4">
+ <Badge className={c.isBlocked ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-600'}>
  {c.isBlocked ? 'Blocked' : 'Active'}
  </Badge>
  </td>
- <td className="px-4 py-3">
- <div className="flex gap-1">
- <button onClick={() => verify(c)} className="p-1.5 hover:bg-green-50 :bg-green-900/20 rounded-lg text-green-500" title={c.isVerified ? 'Remove verification' : 'Verify'}>
- <CheckCircle size={15} />
+ <td className="px-5 py-4">
+ <div className="flex gap-2">
+ <button onClick={() => verify(c)} className="p-2 hover:bg-green-50 border border-transparent hover:border-green-200 rounded-xl text-green-500 transition-all" title={c.isVerified ? 'Remove verification' : 'Verify'}>
+ <CheckCircle size={16} />
  </button>
- <button onClick={() => block(c)} className="p-1.5 hover:bg-red-50 :bg-red-900/20 rounded-lg text-red-400" title={c.isBlocked ? 'Unblock' : 'Block'}>
- {c.isBlocked ? <Shield size={15} /> : <ShieldOff size={15} />}
+ <button onClick={() => block(c)} className="p-2 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-xl text-red-400 transition-all" title={c.isBlocked ? 'Unblock' : 'Block'}>
+ {c.isBlocked ? <Shield size={16} /> : <ShieldOff size={16} />}
  </button>
  </div>
  </td>
@@ -275,34 +275,36 @@ export function AdminJobs() {
  };
 
  return (
- <div className="max-w-7xl mx-auto space-y-5">
- <h1 className="text-2xl font-bold text-gray-900 ">All Jobs</h1>
- <Card className="overflow-hidden">
+ <div className="max-w-7xl mx-auto space-y-6">
+ <div className="page-header mb-0">
+ <h1 className="page-title">All Jobs</h1>
+ </div>
+ <Card className="overflow-hidden border border-brand-primary/10">
  <div className="overflow-x-auto">
  <table className="w-full text-sm">
- <thead className="bg-gray-50 border-b border-gray-200 ">
+ <thead className="bg-brand-surface border-b border-brand-primary/20">
  <tr>
  {['Job Title', 'Company', 'Type', 'Applications', 'Status', 'Posted', 'Actions'].map(h => (
- <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+ <th key={h} className="text-left px-5 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
  ))}
  </tr>
  </thead>
- <tbody className="divide-y divide-gray-100 ">
+ <tbody className="divide-y divide-brand-primary/10">
  {loading ? (
- [...Array(5)].map((_, i) => <tr key={i}>{[...Array(7)].map((_, j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>)}</tr>)
+ [...Array(5)].map((_, i) => <tr key={i}>{[...Array(7)].map((_, j) => <td key={j} className="px-5 py-4"><div className="h-5 skeleton rounded" /></td>)}</tr>)
  ) : jobs.map(job => (
- <tr key={job.id} className="hover:bg-gray-50 :bg-gray-800/50">
- <td className="px-4 py-3 font-medium text-gray-900 ">{job.title}</td>
- <td className="px-4 py-3 text-gray-500">{job.company?.name}</td>
- <td className="px-4 py-3 text-gray-500">{job.type.replace('_', ' ')}</td>
- <td className="px-4 py-3 text-gray-500">{job._count?.applications || 0}</td>
- <td className="px-4 py-3">
- <Badge className={job.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>{job.status}</Badge>
+ <tr key={job.id} className="hover:bg-brand-bg transition-colors">
+ <td className="px-5 py-4 font-bold text-gray-900 ">{job.title}</td>
+ <td className="px-5 py-4 font-medium text-gray-500">{job.company?.name}</td>
+ <td className="px-5 py-4 font-medium text-gray-500">{job.type.replace('_', ' ')}</td>
+ <td className="px-5 py-4 font-medium text-gray-500">{job._count?.applications || 0}</td>
+ <td className="px-5 py-4">
+ <Badge className={job.status === 'ACTIVE' ? 'bg-brand-surface text-brand-primary border border-brand-primary/20' : 'bg-gray-100 text-gray-500'}>{job.status}</Badge>
  </td>
- <td className="px-4 py-3 text-gray-500">{formatDate(job.createdAt)}</td>
- <td className="px-4 py-3">
- <button onClick={() => deleteJob(job.id)} className="p-1.5 hover:bg-red-50 :bg-red-900/20 rounded-lg text-red-400">
- <Trash2 size={15} />
+ <td className="px-5 py-4 font-medium text-gray-500">{formatDate(job.createdAt)}</td>
+ <td className="px-5 py-4">
+ <button onClick={() => deleteJob(job.id)} className="p-2 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-xl text-red-400 transition-all">
+ <Trash2 size={16} />
  </button>
  </td>
  </tr>
@@ -324,35 +326,37 @@ export function AdminEmailLogs() {
  }, []);
 
  return (
- <div className="max-w-7xl mx-auto space-y-5">
- <h1 className="text-2xl font-bold text-gray-900 ">Email Logs</h1>
- <Card className="overflow-hidden">
+ <div className="max-w-7xl mx-auto space-y-6">
+ <div className="page-header mb-0">
+ <h1 className="page-title">Email Logs</h1>
+ </div>
+ <Card className="overflow-hidden border border-brand-primary/10">
  <div className="overflow-x-auto">
  <table className="w-full text-sm">
- <thead className="bg-gray-50 border-b border-gray-200 ">
+ <thead className="bg-brand-surface border-b border-brand-primary/20">
  <tr>
  {['To', 'Subject', 'Template', 'Status', 'Attempts', 'Sent At'].map(h => (
- <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+ <th key={h} className="text-left px-5 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
  ))}
  </tr>
  </thead>
- <tbody className="divide-y divide-gray-100 ">
+ <tbody className="divide-y divide-brand-primary/10">
  {loading ? (
- [...Array(5)].map((_, i) => <tr key={i}>{[...Array(6)].map((_, j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>)}</tr>)
+ [...Array(5)].map((_, i) => <tr key={i}>{[...Array(6)].map((_, j) => <td key={j} className="px-5 py-4"><div className="h-5 skeleton rounded" /></td>)}</tr>)
  ) : logs.map(log => (
- <tr key={log.id} className="hover:bg-gray-50 :bg-gray-800/50">
- <td className="px-4 py-3 text-gray-700 ">{log.to}</td>
- <td className="px-4 py-3 text-gray-500 max-w-48 truncate">{log.subject}</td>
- <td className="px-4 py-3 text-gray-500">{log.template}</td>
- <td className="px-4 py-3">
+ <tr key={log.id} className="hover:bg-brand-bg transition-colors">
+ <td className="px-5 py-4 font-medium text-gray-700 ">{log.to}</td>
+ <td className="px-5 py-4 font-medium text-gray-500 max-w-48 truncate">{log.subject}</td>
+ <td className="px-5 py-4 font-medium text-gray-500">{log.template}</td>
+ <td className="px-5 py-4">
  <Badge className={
- log.status === 'SENT' ? 'bg-green-100 text-green-700' :
- log.status === 'FAILED' ? 'bg-red-100 text-red-700' :
- 'bg-amber-100 text-amber-700'
+ log.status === 'SENT' ? 'bg-green-50 text-green-600' :
+ log.status === 'FAILED' ? 'bg-red-50 text-red-500' :
+ 'bg-amber-50 text-amber-600'
  }>{log.status}</Badge>
  </td>
- <td className="px-4 py-3 text-gray-500">{log.attempts}</td>
- <td className="px-4 py-3 text-gray-500">{log.sentAt ? formatDate(log.sentAt) : '—'}</td>
+ <td className="px-5 py-4 font-medium text-gray-500">{log.attempts}</td>
+ <td className="px-5 py-4 font-medium text-gray-500">{log.sentAt ? formatDate(log.sentAt) : '—'}</td>
  </tr>
  ))}
  </tbody>

@@ -3,20 +3,57 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../config/prisma');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { OAuth2Client } = require('google-auth-library');
+const { sendEmail } = require('../services/emailService');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 
-exports.register = asyncHandler(async (req, res) => {
-  const { email, phone, password, role, firstName, lastName, companyName, companyLocation, companyType, companyWebsite, companyLinkedin } = req.body;
-
-  if (!email || !password || !role) {
-    return res.status(400).json({ message: 'Email, password and role are required' });
+exports.sendOtp = asyncHandler(async (req, res) => {
+  const { identifier } = req.body;
+  if (!identifier) {
+    return res.status(400).json({ message: 'Email address is required' });
   }
 
-  if (password.length < 8) {
+  const isEmail = identifier.includes('@');
+  if (!isEmail) {
+    return res.status(400).json({ message: 'Please provide a valid email address for verification' });
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  await prisma.otp.create({
+    data: {
+      email: identifier,
+      code,
+      expiresAt: new Date(Date.now() + 10 * 60000), // 10 mins
+    },
+  });
+
+  try {
+    await sendEmail({
+      to: identifier,
+      subject: 'Your Verification Code',
+      template: 'otpVerification',
+      data: { code },
+    });
+  } catch (err) {
+    console.error('Email send error:', err);
+    return res.status(500).json({ message: 'Failed to send OTP email. Please check your email configuration.' });
+  }
+
+  res.json({ message: 'OTP sent successfully' });
+});
+
+exports.register = asyncHandler(async (req, res) => {
+  const { email, phone, password, otp, role, firstName, lastName, companyName, companyLocation, companyType, companyWebsite, companyLinkedin } = req.body;
+
+  if (!email || !role) {
+    return res.status(400).json({ message: 'Email and role are required' });
+  }
+
+  if (password && password.length < 8) {
     return res.status(400).json({ message: 'Password must be at least 8 characters' });
   }
 
@@ -34,7 +71,33 @@ exports.register = asyncHandler(async (req, res) => {
   });
   if (existing) return res.status(409).json({ message: 'Email or phone already registered' });
 
-  const hashedPassword = await bcrypt.hash(password, 12);
+  // Verify OTP
+  if (!otp) {
+    return res.status(400).json({ message: 'OTP is required for registration' });
+  }
+  
+  // Find valid OTP record
+  const identifier = phone ? phone.trim() : email.toLowerCase().trim();
+  const validOtp = await prisma.otp.findFirst({
+    where: {
+      code: otp,
+      expiresAt: { gt: new Date() },
+      OR: [
+        { email: email.toLowerCase().trim() },
+        ...(phone ? [{ phone: phone.trim() }] : [])
+      ]
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  if (!validOtp) {
+    return res.status(400).json({ message: 'Invalid or expired OTP' });
+  }
+
+  // Delete the OTP once verified
+  await prisma.otp.delete({ where: { id: validOtp.id } });
+
+  const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
 
   const user = await prisma.user.create({
     data: {
@@ -64,10 +127,14 @@ exports.register = asyncHandler(async (req, res) => {
 });
 
 exports.login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, otp } = req.body; // email field here is used as the identifier for both email/phone
 
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email/Phone and password are required' });
+  if (!email) {
+    return res.status(400).json({ message: 'Email/Phone is required' });
+  }
+
+  if (!otp) {
+    return res.status(400).json({ message: 'OTP is required to login' });
   }
 
   const identifier = email.toLowerCase().trim();
@@ -78,21 +145,40 @@ exports.login = asyncHandler(async (req, res) => {
         { phone: identifier }
       ]
     },
-    include: { candidate: true, company: true },
+    include: { candidate: true, company: true }
   });
 
   if (!user) {
     return res.status(401).json({ message: 'Invalid credentials' });
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.status(401).json({ message: 'Invalid credentials' });
+  if (!user.isActive) {
+    return res.status(403).json({ message: 'Account is deactivated' });
   }
 
   if (user.isBlocked) {
-    return res.status(403).json({ message: 'Account blocked. Contact support.' });
+    return res.status(403).json({ message: 'Account is blocked by admin' });
   }
+
+  // Verify OTP
+  const validOtp = await prisma.otp.findFirst({
+    where: {
+      code: otp,
+      expiresAt: { gt: new Date() },
+      OR: [
+        { email: identifier },
+        { phone: identifier }
+      ]
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  if (!validOtp) {
+    return res.status(400).json({ message: 'Invalid or expired OTP' });
+  }
+
+  // Clear verified OTP
+  await prisma.otp.delete({ where: { id: validOtp.id } });
 
   const token = signToken(user.id);
   const { password: _, ...userWithoutPassword } = user;

@@ -95,6 +95,8 @@ model Candidate {
   gender       String?
   location     String?
   bio          String?
+  jobTitle     String?
+  industry     String?
   avatar       String?
   resumeUrl    String?
   resumeName   String?
@@ -382,5 +384,14 @@ model ActivityLog {
   action    String
   details   String?
   ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+model Otp {
+  id        String   @id @default(cuid())
+  email     String?
+  phone     String?
+  code      String
+  expiresAt DateTime
   createdAt DateTime @default(now())
 }

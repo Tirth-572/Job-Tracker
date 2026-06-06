@@ -15,13 +15,13 @@ exports.getProfile = asyncHandler(async (req, res) => {
 });
 
 exports.updateProfile = asyncHandler(async (req, res) => {
-  const { firstName, lastName, phone, dob, gender, location, bio, skills, linkedinUrl, githubUrl, portfolioUrl } = req.body;
+  const { firstName, lastName, phone, dob, gender, location, bio, industry, jobTitle, skills, linkedinUrl, githubUrl, portfolioUrl } = req.body;
   const candidate = await prisma.candidate.update({
     where: { userId: req.user.id },
     data: { 
       firstName, lastName, phone, 
       dob: dob ? parseDate(dob) : null,
-      gender, location, bio, skills, linkedinUrl, githubUrl, portfolioUrl 
+      gender, location, bio, industry, jobTitle, skills, linkedinUrl, githubUrl, portfolioUrl 
     },
   });
   res.json(candidate);
@@ -53,6 +53,14 @@ exports.uploadResume = asyncHandler(async (req, res) => {
     data: { resumeUrl, resumeName: req.file.originalname },
   });
   res.json({ resumeUrl: candidate.resumeUrl, resumeName: candidate.resumeName });
+});
+
+exports.removeResume = asyncHandler(async (req, res) => {
+  const candidate = await prisma.candidate.update({
+    where: { userId: req.user.id },
+    data: { resumeUrl: null, resumeName: null },
+  });
+  res.json({ message: 'Resume removed successfully' });
 });
 
 exports.addExperience = asyncHandler(async (req, res) => {

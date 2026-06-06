@@ -35,6 +35,7 @@ export const authAPI = {
  updatePhone: (data) => api.put('/auth/phone', data),
  updateSettings: (data) => api.put('/auth/settings', data),
  googleLogin: (data) => api.post('/auth/google', data),
+ sendOtp: (data) => api.post('/auth/send-otp', data),
 };
 
 export const candidateAPI = {
@@ -43,6 +44,7 @@ export const candidateAPI = {
  uploadAvatar: (formData) => api.post('/candidates/avatar', formData),
  removeAvatar: () => api.delete('/candidates/avatar'),
  uploadResume: (formData) => api.post('/candidates/resume', formData),
+ removeResume: () => api.delete('/candidates/resume'),
  addExperience: (data) => api.post('/candidates/experiences', data),
  updateExperience: (id, data) => api.put(`/candidates/experiences/${id}`, data),
  deleteExperience: (id) => api.delete(`/candidates/experiences/${id}`),

@@ -13,9 +13,9 @@ const DynamicTimeline = ({ stages, currentStageId, isRejected }) => {
   return (
     <div className="mt-5 mb-2">
       {isRejected ? (
-        <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-100">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-          <span className="text-sm font-medium text-red-700">Application Rejected</span>
+        <div className="flex items-center gap-2 p-3 bg-gray-100 rounded-xl border border-gray-200">
+          <div className="w-2.5 h-2.5 rounded-full bg-gray-500" />
+          <span className="text-sm font-bold text-gray-700">Application Closed</span>
         </div>
       ) : (
         <div className="flex items-center gap-0 overflow-x-auto pb-12 pt-2 px-2 scrollbar-hide">
@@ -27,23 +27,23 @@ const DynamicTimeline = ({ stages, currentStageId, isRejected }) => {
               <React.Fragment key={stage.id}>
                 <div className="flex flex-col items-center shrink-0 relative">
                   <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all z-10',
-                    active ? 'bg-[#635BFF] text-white ring-4 ring-[#635BFF]/20 shadow-md scale-110' :
-                    done ? 'bg-[#635BFF] text-white' : 'bg-[#E2E8F0] text-[#94A3B8]'
+                    'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 z-10',
+                    active ? 'bg-brand-primary text-white ring-4 ring-brand-secondary/40 shadow-soft scale-110' :
+                    done ? 'bg-brand-primary text-white' : 'bg-brand-bg text-gray-400 border border-brand-primary/20'
                   )}>
                     {done ? '✓' : idx + 1}
                   </div>
                   <p className={cn(
-                    'absolute top-10 text-[11px] text-center w-20 leading-tight hidden sm:block',
-                    active ? 'text-[#635BFF] font-bold' : done ? 'text-[#334155] font-medium' : 'text-[#94A3B8]'
+                    'absolute top-10 text-[11px] text-center w-24 leading-tight hidden sm:block',
+                    active ? 'text-brand-primary font-bold' : done ? 'text-gray-700 font-medium' : 'text-gray-400'
                   )}>
                     {stage.name}
                   </p>
                 </div>
                 {idx < timelineStages.length - 1 && (
                   <div className={cn(
-                    'flex-1 h-[2px] min-w-[32px] mx-1 transition-all rounded-full',
-                    idx < currentIdx ? 'bg-[#635BFF]' : 'bg-[#E2E8F0]'
+                    'flex-1 h-[2px] min-w-[40px] mx-1 transition-all rounded-full',
+                    idx < currentIdx ? 'bg-brand-primary' : 'bg-brand-primary/10'
                   )} />
                 )}
               </React.Fragment>
@@ -64,42 +64,42 @@ const ApplicationCard = ({ application }) => {
  const isRejected = application.status === 'REJECTED' || currentStage?.systemType === 'REJECTED';
 
  return (
- <Card className="overflow-hidden">
- <div className="p-5">
- <div className="flex items-start gap-3">
- <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+ <Card className="overflow-hidden border border-brand-primary/10 hover:border-brand-primary/30 transition-colors">
+ <div className="p-6">
+ <div className="flex items-start gap-4">
+ <div className="w-14 h-14 rounded-2xl bg-brand-bg flex items-center justify-center shrink-0 border border-brand-primary/20 p-2">
  {application.job?.company?.logo
  ? <img src={getFileUrl(application.job.company.logo)} alt="" className="w-full h-full object-contain rounded-xl" />
- : <Briefcase size={20} className="text-gray-400" />
+ : <Briefcase size={24} className="text-brand-primary" />
  }
  </div>
- <div className="flex-1 min-w-0">
- <h3 className="font-semibold text-gray-900 ">{application.job?.title}</h3>
- <p className="text-sm text-gray-500">{application.job?.company?.name}</p>
- <p className="text-xs text-gray-400 mt-0.5">Applied {formatRelativeDate(application.appliedAt)}</p>
+ <div className="flex-1 min-w-0 pt-1">
+ <h3 className="font-bold text-gray-900 text-lg leading-tight">{application.job?.title}</h3>
+ <p className="text-sm font-medium text-gray-500 mt-1">{application.job?.company?.name}</p>
+ <p className="text-xs font-medium text-gray-400 mt-1">Applied {formatRelativeDate(application.appliedAt)}</p>
  </div>
- <Badge className={currentStage?.color || 'bg-gray-100 text-gray-700'}>{currentStage?.name || 'Applied'}</Badge>
+ <Badge className={currentStage?.color || 'bg-brand-bg text-brand-primary'}>{currentStage?.name || 'Applied'}</Badge>
  </div>
 
  <DynamicTimeline stages={stages} currentStageId={application.stageId} isRejected={isRejected} />
 
  {nextInterview && (
- <div className="mt-3 p-3 bg-purple-50 rounded-lg flex items-center gap-2">
- <Calendar size={16} className="text-purple-600" />
+ <div className="mt-4 p-4 bg-brand-bg rounded-2xl flex items-center gap-3 border border-brand-primary/20">
+ <Calendar size={18} className="text-brand-primary" />
  <div>
- <p className="text-sm font-medium text-purple-700 ">Interview: {formatDate(nextInterview.scheduledAt)}</p>
- <p className="text-xs text-purple-500">{nextInterview.customTypeName || 'Custom'} {nextInterview.meetingLink && '· Link available'}</p>
+ <p className="text-sm font-bold text-gray-900 ">Interview: {formatDate(nextInterview.scheduledAt)}</p>
+ <p className="text-xs font-medium text-gray-500 mt-0.5">{nextInterview.customTypeName || 'Custom'} {nextInterview.meetingLink && '· Link available'}</p>
  </div>
  </div>
  )}
 
  {application.offerLetter && (
- <div className="mt-3 p-3 bg-green-50 rounded-lg flex items-center justify-between">
- <div className="flex items-center gap-2">
- <FileText size={16} className="text-green-600" />
- <p className="text-sm font-medium text-green-700 ">Offer Letter Available</p>
+ <div className="mt-4 p-4 bg-brand-bg rounded-2xl flex items-center justify-between border border-brand-primary/20">
+ <div className="flex items-center gap-3">
+ <FileText size={18} className="text-brand-primary" />
+ <p className="text-sm font-bold text-gray-900 ">Offer Letter Available</p>
  </div>
- <a href={application.offerLetter.fileUrl} target="_blank" rel="noopener noreferrer" className="btn-primary text-xs px-3 py-1.5">
+ <a href={application.offerLetter.fileUrl} target="_blank" rel="noopener noreferrer" className="btn-primary text-xs px-4 py-2">
  <Download size={14} /> Download
  </a>
  </div>
@@ -107,23 +107,23 @@ const ApplicationCard = ({ application }) => {
 
  <button
  onClick={() => setExpanded(p => !p)}
- className="mt-3 w-full text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1"
+ className="mt-4 w-full py-2 text-sm font-bold text-gray-500 hover:text-brand-primary flex items-center justify-center gap-1.5 transition-colors rounded-xl hover:bg-brand-bg"
  >
- {expanded ? <><ChevronUp size={14} /> Hide details</> : <><ChevronDown size={14} /> Show details</>}
+ {expanded ? <><ChevronUp size={16} /> Hide details</> : <><ChevronDown size={16} /> Show details</>}
  </button>
 
  {expanded && (
- <div className="mt-3 pt-3 border-t border-gray-100 space-y-2 text-sm text-gray-600 ">
+ <div className="mt-4 pt-4 border-t border-brand-primary/10 space-y-4 text-sm text-gray-600 ">
  {application.coverLetter && (
- <div><p className="font-medium text-gray-800 mb-1">Cover Letter</p><p className="leading-relaxed">{application.coverLetter}</p></div>
+ <div><p className="font-bold text-gray-900 mb-1">Cover Letter</p><p className="leading-relaxed font-medium text-gray-500">{application.coverLetter}</p></div>
  )}
  {application.notes && (
- <div><p className="font-medium text-gray-800 mb-1">HR Notes</p><p>{application.notes}</p></div>
+ <div><p className="font-bold text-gray-900 mb-1">HR Notes</p><p className="font-medium text-gray-500">{application.notes}</p></div>
  )}
  {application.rejectionReason && (
- <div className="p-2 bg-red-50 rounded">
- <p className="font-medium text-red-600">Rejection Reason</p>
- <p className="text-red-500">{application.rejectionReason}</p>
+ <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+ <p className="font-bold text-gray-700">Closure Reason</p>
+ <p className="text-gray-500 font-medium mt-1">{application.rejectionReason}</p>
  </div>
  )}
  </div>
@@ -147,22 +147,24 @@ export default function CandidateApplications() {
  .finally(() => setLoading(false));
  }, [filter, page]);
 
- // Keep these filters for simplicity, they map to the macro application 'status'
- const filterBtns = [['', 'All'], ['APPLIED', 'Applied'], ['INTERVIEW_SCHEDULED', 'Interviews'], ['OFFER_SENT', 'Offers'], ['REJECTED', 'Rejected']];
+ const filterBtns = [['', 'All'], ['APPLIED', 'Applied'], ['INTERVIEW_SCHEDULED', 'Interviews'], ['OFFER_SENT', 'Offers'], ['REJECTED', 'Closed']];
 
  return (
- <div className="max-w-4xl mx-auto space-y-5">
- <div>
- <h1 className="text-2xl font-bold text-gray-900 ">My Applications</h1>
- <p className="text-gray-500 mt-1">{total} total applications</p>
+ <div className="max-w-4xl mx-auto space-y-6">
+ <div className="page-header">
+ <h1 className="page-title">My Applications</h1>
+ <p className="page-subtitle">{total} total applications tracking</p>
  </div>
 
- <div className="flex flex-wrap gap-2">
+ <div className="flex flex-wrap gap-3">
  {filterBtns.map(([val, label]) => (
  <button
  key={val}
  onClick={() => { setFilter(val); setPage(1); }}
- className={cn('px-4 py-1.5 rounded-full text-sm font-medium transition-all border', filter === val ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-200 text-gray-600 hover:border-gray-300')}
+ className={cn(
+ 'filter-pill',
+ filter === val ? 'filter-pill-active' : 'filter-pill-inactive'
+ )}
  >
  {label}
  </button>
@@ -170,13 +172,13 @@ export default function CandidateApplications() {
  </div>
 
  {loading ? (
- <div className="space-y-4">{[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}</div>
+ <div className="space-y-5">{[...Array(3)].map((_, i) => <SkeletonCard key={i} />)}</div>
  ) : applications.length === 0 ? (
- <Card className="p-8">
+ <Card className="p-10">
  <EmptyState icon={FileText} title="No applications" description={filter ? 'No applications match this filter' : "You haven't applied to any jobs yet"} />
  </Card>
  ) : (
- <div className="space-y-4">
+ <div className="space-y-5">
  {applications.map((app, i) => (
  <motion.div key={app.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
  <ApplicationCard application={app} />
@@ -186,7 +188,7 @@ export default function CandidateApplications() {
  )}
 
  {total > 10 && (
- <div className="flex justify-center gap-2">
+ <div className="flex justify-center gap-3 mt-8">
  <Button variant="secondary" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
  <Button variant="secondary" disabled={applications.length < 10} onClick={() => setPage(p => p + 1)}>Next</Button>
  </div>
