@@ -362,3 +362,21 @@ exports.googleLogin = asyncHandler(async (req, res) => {
   const { password: _, ...userWithoutPassword } = user;
   res.json({ token, user: userWithoutPassword });
 });
+
+exports.dummyLogin = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await prisma.user.findFirst({
+    where: { email: email.toLowerCase().trim(), isActive: true, isBlocked: false },
+    include: { candidate: true, company: true, admin: true }
+  });
+
+  if (!user) {
+    return res.status(404).json({ message: `No dummy account found for ${email}.` });
+  }
+
+  const token = signToken(user.id);
+  const { password: _, ...userWithoutPassword } = user;
+  res.json({ token, user: userWithoutPassword });
+});
+

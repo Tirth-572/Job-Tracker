@@ -31,6 +31,7 @@ import CompanyProfile from './pages/company/Profile';
 import Chat from './pages/shared/Chat';
 import ProfilePage from './pages/shared/ProfilePage';
 import AccountSettings from './pages/shared/AccountSettings';
+import PremiumPage from './pages/PremiumPage';
 
 // Admin Pages
 import AdminDashboard, { AdminUsers, AdminCompanies, AdminJobs, AdminEmailLogs } from './pages/admin/AdminPages';
@@ -98,6 +99,7 @@ function AppRoutes() {
  {/* Shared */}
  <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
  <Route path="/settings" element={<ProtectedRoute><Layout><AccountSettings /></Layout></ProtectedRoute>} />
+ <Route path="/premium" element={<ProtectedRoute><Layout><PremiumPage /></Layout></ProtectedRoute>} />
 
  {/* Root redirect */}
  <Route path="/" element={

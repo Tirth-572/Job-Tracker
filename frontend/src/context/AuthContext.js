@@ -57,6 +57,18 @@ export const AuthProvider = ({ children }) => {
  return data;
  }, []);
 
+ const dummyLogin = useCallback(async (email) => {
+ const { data } = await authAPI.dummyLogin({ email });
+ localStorage.setItem('token', data.token);
+ localStorage.setItem('user', JSON.stringify(data.user));
+ setUser(data.user);
+ setLoading(false);
+ validateOnMount.current = false;
+ try { connectSocket(data.token); } catch (e) {}
+ return data;
+ }, []);
+
+
  const register = useCallback(async (userData) => {
  const { data } = await authAPI.register(userData);
  localStorage.setItem('token', data.token);
@@ -102,7 +114,7 @@ export const AuthProvider = ({ children }) => {
  }, []);
 
  return (
- <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout, refreshUser }}>
+ <AuthContext.Provider value={{ user, loading, login, dummyLogin, register, googleLogin, logout, refreshUser }}>
  {children}
  </AuthContext.Provider>
  );

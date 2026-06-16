@@ -82,6 +82,12 @@ model User {
   emailNotifications Boolean @default(true)
   pushNotifications  Boolean @default(true)
   profileVisibility  String  @default("PUBLIC")
+
+  isPremium     Boolean   @default(false)
+  premiumUntil  DateTime?
+
+  stickyNotes   StickyNote[]
+  transactions  Transaction[]
 }
 
 model Candidate {
@@ -394,4 +400,30 @@ model Otp {
   code      String
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model StickyNote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  color     String   @default("bg-yellow-200")
+  positionX Int      @default(0)
+  positionY Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Float
+  currency      String   @default("INR")
+  status        String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  paymentId     String?  // Gateway Payment ID (e.g. Razorpay payment ID)
+  orderId       String?  // Gateway Order ID
+  method        String   @default("UPI")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

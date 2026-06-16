@@ -29,6 +29,7 @@ api.interceptors.response.use(
 export const authAPI = {
  register: (data) => api.post('/auth/register', data),
  login: (data) => api.post('/auth/login', data),
+ dummyLogin: (data) => api.post('/auth/dummy-login', data),
  getMe: () => api.get('/auth/me'),
  changePassword: (data) => api.put('/auth/password', data),
  updateEmail: (data) => api.put('/auth/email', data),
@@ -128,6 +129,13 @@ export const workflowAPI = {
  updateStage: (id, data) => api.put(`/workflows/${id}`, data),
  reorderStages: (stageIds) => api.put('/workflows/reorder', { stageIds }),
  deleteStage: (id) => api.delete(`/workflows/${id}`),
+};
+
+export const stickyNotesAPI = {
+  getNotes: () => api.get('/sticky-notes'),
+  createNote: (data) => api.post('/sticky-notes', data),
+  updateNote: (id, data) => api.put(`/sticky-notes/${id}`, data),
+  deleteNote: (id) => api.delete(`/sticky-notes/${id}`),
 };
 
 export default api;

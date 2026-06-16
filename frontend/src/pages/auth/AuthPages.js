@@ -122,7 +122,7 @@ const DemoAccounts = ({ onSelect }) => (
 
 // ── LoginPage ─────────────────────────────────────────────────────────────────
 export const LoginPage = () => {
-  const { login, googleLogin } = useAuth();
+  const { login, dummyLogin, googleLogin } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '', otp: '' });
   const [loading, setLoading] = useState(false);
@@ -143,6 +143,19 @@ export const LoginPage = () => {
   }, [countdown]);
 
   const routes = { CANDIDATE: '/candidate/dashboard', COMPANY: '/company/dashboard', ADMIN: '/admin/dashboard' };
+
+  const handleDummyLogin = async (acc) => {
+    setLoading(true);
+    try {
+      const data = await dummyLogin(acc.email);
+      toast.success(`Logged in as ${acc.label}!`);
+      navigate(routes[data.user.role] || '/');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Dummy login failed. Ensure the account exists.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSuccess = async (cr) => {
     try {
@@ -269,7 +282,7 @@ export const LoginPage = () => {
               <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => toast.error('Google Login Failed')} />
             </div>
 
-            <DemoAccounts onSelect={acc => setForm({ email: acc.email, password: acc.password })} />
+            <DemoAccounts onSelect={handleDummyLogin} />
 
             <p className="text-center text-sm text-[#6B7280] mt-5">
               Don't have an account?{' '}

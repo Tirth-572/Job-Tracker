@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Briefcase, FileText, MessageSquare, Bell,
     Settings, LogOut, Menu, X, Search, Users, Building2,
-    BarChart3, Sparkles, ChevronRight
+    BarChart3, Sparkles, ChevronRight, Crown
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -19,6 +19,7 @@ const NAV_ITEMS = {
         { label: 'Browse Jobs', icon: Briefcase, path: '/candidate/jobs' },
         { label: 'Applications', icon: FileText, path: '/candidate/applications' },
         { label: 'Messages', icon: MessageSquare, path: '/candidate/chat' },
+        { label: 'Premium', icon: Crown, path: '/premium' },
         { label: 'Settings', icon: Settings, path: '/settings' },
     ],
     COMPANY: [
@@ -27,6 +28,7 @@ const NAV_ITEMS = {
         { label: 'Applications', icon: FileText, path: '/company/applications' },
         { label: 'Pipeline', icon: BarChart3, path: '/company/pipeline' },
         { label: 'Workflows', icon: Sparkles, path: '/company/workflows' },
+        { label: 'Premium', icon: Crown, path: '/premium' },
         { label: 'Settings', icon: Settings, path: '/settings' },
     ],
     ADMIN: [

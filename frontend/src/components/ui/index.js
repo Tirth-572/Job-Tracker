@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '../../lib/utils';
 import { Loader2, X, Eye, EyeOff, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -139,7 +140,6 @@ Select.displayName = 'Select';
 // ─────────────────────────────────────────────────────────────────────────────
 // Modal
 // ─────────────────────────────────────────────────────────────────────────────
-import { createPortal } from 'react-dom';
 
 export const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     const sizes = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl', full: 'max-w-6xl' };

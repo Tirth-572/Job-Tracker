@@ -7,6 +7,7 @@ import { Card, StatCard, Badge, Button, SkeletonCard, EmptyState, Modal, Avatar 
 import { STATUS_CONFIG, formatRelativeDate, getGreeting, getFileUrl } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import StickyNotesBoard from '../../components/shared/StickyNotesBoard';
 import toast from 'react-hot-toast';
 
 const COLORS = ['#71C9CE', '#A6E3E9', '#4A9699', '#F59E0B', '#8B5CF6', '#F97316', '#10B981', '#EF4444'];
@@ -147,6 +148,11 @@ export default function CompanyDashboard() {
                     </Card>
                 </motion.div>
             </div>
+
+            {/* Sticky Notes */}
+            <motion.div variants={item}>
+                <StickyNotesBoard />
+            </motion.div>
 
             {/* Recent Applications */}
             <motion.div variants={item}>

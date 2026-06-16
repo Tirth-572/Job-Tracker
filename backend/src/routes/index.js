@@ -10,6 +10,8 @@ const chatRoutes = require('./chat');
 const notificationRoutes = require('./notifications');
 const adminRoutes = require('./admin');
 const supportRoutes = require('./support');
+const stickyNotesRoutes = require('./stickyNotes');
+const paymentRoutes = require('./payment');
 
 router.use('/auth', authRoutes);
 router.use('/candidates', candidateRoutes);
@@ -20,5 +22,7 @@ router.use('/chat', chatRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/admin', adminRoutes);
 router.use('/support', supportRoutes);
+router.use('/sticky-notes', stickyNotesRoutes);
+router.use('/payment', paymentRoutes);
 
 module.exports = router;

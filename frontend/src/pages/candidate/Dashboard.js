@@ -10,6 +10,7 @@ import { applicationAPI, jobsAPI, candidateAPI } from '../../services/api';
 import { Card, StatCard, Badge, SkeletonCard, EmptyState, ProgressBar, Modal, Input, Select, Button } from '../../components/ui';
 import { STATUS_CONFIG, JOB_TYPE_CONFIG, formatRelativeDate, formatSalary, getFileUrl, getGreeting } from '../../lib/utils';
 import { INDUSTRIES } from '../auth/AuthPages';
+import StickyNotesBoard from '../../components/shared/StickyNotesBoard';
 import toast from 'react-hot-toast';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.07 } } };
@@ -219,6 +220,10 @@ export default function CandidateDashboard() {
 
                 {/* Right column */}
                 <div className="space-y-6">
+                    <motion.div variants={item}>
+                        <StickyNotesBoard />
+                    </motion.div>
+
                     {/* Profile strength */}
                     <motion.div variants={item}>
                         <Card className="p-6">
