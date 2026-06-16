@@ -97,32 +97,11 @@ const RoleSelector = ({ value, onChange }) => (
   </div>
 );
 
-// ── Demo accounts ─────────────────────────────────────────────────────────────
-const DemoAccounts = ({ onSelect }) => (
-  <div className="mt-4 p-3.5 bg-[#CBF1F5] border border-[#B8E8EC] rounded-xl">
-    <p className="text-xs font-semibold text-[#6B7280] mb-2 uppercase tracking-wide">Demo accounts</p>
-    <div className="space-y-1">
-      {[
-        { label: 'Admin', email: 'admin@hirebridge.com', password: 'admin123456' },
-        { label: 'Company', email: 'company@test.com', password: 'password123' },
-        { label: 'Candidate', email: 'john@example.com', password: 'password123' },
-      ].map(acc => (
-        <button key={acc.label} onClick={() => onSelect(acc)}
-          className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-white text-left transition-colors group">
-          <div>
-            <span className="text-xs font-semibold text-[#1F2937]">{acc.label}: </span>
-            <span className="text-xs text-[#9CA3AF]">{acc.email}</span>
-          </div>
-          <ArrowRight size={12} className="text-[#B8E8EC] group-hover:text-[#71C9CE] transition-colors" />
-        </button>
-      ))}
-    </div>
-  </div>
-);
+
 
 // ── LoginPage ─────────────────────────────────────────────────────────────────
 export const LoginPage = () => {
-  const { login, dummyLogin, googleLogin } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '', otp: '' });
   const [loading, setLoading] = useState(false);
@@ -143,19 +122,6 @@ export const LoginPage = () => {
   }, [countdown]);
 
   const routes = { CANDIDATE: '/candidate/dashboard', COMPANY: '/company/dashboard', ADMIN: '/admin/dashboard' };
-
-  const handleDummyLogin = async (acc) => {
-    setLoading(true);
-    try {
-      const data = await dummyLogin(acc.email);
-      toast.success(`Logged in as ${acc.label}!`);
-      navigate(routes[data.user.role] || '/');
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Dummy login failed. Ensure the account exists.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoogleSuccess = async (cr) => {
     try {
@@ -281,8 +247,6 @@ export const LoginPage = () => {
             <div className="flex justify-center">
               <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => toast.error('Google Login Failed')} />
             </div>
-
-            <DemoAccounts onSelect={handleDummyLogin} />
 
             <p className="text-center text-sm text-[#6B7280] mt-5">
               Don't have an account?{' '}
